@@ -61,12 +61,30 @@
 
   .hud-top { 
     position:absolute; top: 8px; left:8px; right:8px; 
-    display:flex; align-items:center; justify-content:space-between; gap:8px; 
+    display:flex; align-items:flex-start; justify-content:space-between; gap:8px; 
   }
 
-  .hearts { display:flex; gap:4px; }
+  .hud-right {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-end;
+  }
+
+  .hearts { 
+    display:flex; 
+    gap:4px; 
+    background: var(--panel); 
+    border:1px solid var(--outline); 
+    padding:8px 12px; 
+    border-radius:12px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  }
   .heart { 
-    width:28px; height:28px; 
+    width:24px; height:24px; 
     background: #ff4364;
     clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
     filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
@@ -203,6 +221,65 @@
     80% { opacity: 1; transform: translate(-50%, -60%) scale(1); }
     100% { opacity: 0; transform: translate(-50%, -70%) scale(1); }
   }
+
+  .speech-bubble {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.95);
+    color: #1a1a1a;
+    padding: 18px 24px;
+    border-radius: 18px;
+    font-size: calc(18px * var(--font-scale));
+    font-weight: 500;
+    line-height: 1.4;
+    max-width: 300px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    border: 2px solid rgba(0,0,0,0.1);
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    z-index: 1000;
+    white-space: pre-line;
+    text-align: left;
+  }
+
+  .speech-bubble.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .speech-bubble::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 20px;
+    width: 0;
+    height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-top: 8px solid rgba(255, 255, 255, 0.95);
+  }
+
+  .minimap {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    width: 150px;
+    height: 150px;
+    background: rgba(0, 0, 0, 0.6);
+    border: 2px solid var(--outline);
+    border-radius: 8px;
+    pointer-events: none;
+    z-index: 100;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+  }
+
+  .minimap canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    image-rendering: pixelated;
+  }
 </style>
 </head>
 <body>
@@ -211,9 +288,12 @@
       <canvas id="game" width="320" height="180"></canvas>
 
       <div class="hud">
-        <div class="hud-top">
+        <div class="minimap">
+          <canvas id="minimap" width="150" height="150"></canvas>
+        </div>
+        <div class="hud-right">
           <div class="hearts" id="hearts"></div>
-          <div style="display:flex; align-items:center; gap:8px;">
+          <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
             <div class="counter">
               <div class="coin"></div>
               <span id="coins">0</span>
@@ -227,6 +307,7 @@
         </div>
         <div class="hint" id="hint">🎮 移動してみよう</div>
         <div class="level-up" id="levelUp" style="display: none;">🌟 LEVEL UP! 🌟</div>
+        <div class="speech-bubble" id="speechBubble"></div>
       </div>
 
       <div class="virtual">
@@ -285,48 +366,506 @@
   const TS = 16;
   const COLS = 20; // 320/16 = 20
   const ROWS = 11; // 180/16 = 11.25 -> 11
-  const T = { GRASS:0, TREE:1, WATER:2, TALL:3, PATH:4, FLOWER:5 };
+  const T = { GRASS:0, TREE:1, WATER:2, TALL:3, PATH:4, FLOWER:5, ROCK:6, SAND:7, CACTUS:8, SNOW:9, DESERT:10, ICE:11 };
 
-  // 安全なマップ初期化
-  const map = [];
-  for(let y = 0; y < ROWS; y++) {
-    map[y] = [];
-    for(let x = 0; x < COLS; x++) {
-      map[y][x] = T.GRASS;
+  // マップ生成関数
+  function generateMap(type) {
+    const map = [];
+    for(let y = 0; y < ROWS; y++) {
+      map[y] = [];
+      for(let x = 0; x < COLS; x++) {
+        map[y][x] = T.GRASS;
+      }
     }
+
+    switch(type) {
+      case 'village': // 中央：村のフィールド
+        // パス
+        for(let y = 3; y < 8 && y < ROWS; y++) {
+          for(let x = 4; x < 16 && x < COLS; x++) {
+            map[y][x] = T.PATH;
+          }
+        }
+        // 木
+        for(let i = 0; i < 30; i++){
+          const x = Math.floor(Math.random() * COLS);
+          const y = Math.floor(Math.random() * ROWS);
+          if (map[y] && map[y][x] === T.GRASS) {
+            map[y][x] = T.TREE;
+          }
+        }
+        // 水
+        for(let i = 0; i < 10; i++){
+          const x = Math.floor(Math.random() * COLS);
+          const y = Math.floor(Math.random() * ROWS);
+          if (map[y] && map[y][x] === T.GRASS) {
+            map[y][x] = T.WATER;
+          }
+        }
+        // 花
+        for(let i = 0; i < 15; i++){
+          const x = Math.floor(Math.random() * COLS);
+          const y = Math.floor(Math.random() * ROWS);
+          if (map[y] && map[y][x] === T.GRASS) {
+            map[y][x] = T.FLOWER;
+          }
+        }
+        break;
+
+      case 'forest': // 上：森のエリア
+        // 木を多く配置
+        for(let i = 0; i < 50; i++){
+          const x = Math.floor(Math.random() * COLS);
+          const y = Math.floor(Math.random() * ROWS);
+          if (map[y] && map[y][x] === T.GRASS) {
+            map[y][x] = T.TREE;
+          }
+        }
+        // パスを少し
+        for(let y = 5; y < 6 && y < ROWS; y++) {
+          for(let x = 2; x < 18 && x < COLS; x++) {
+            if (map[y] && map[y][x] === T.GRASS) {
+              map[y][x] = T.PATH;
+            }
+          }
+        }
+        // 花を少し
+        for(let i = 0; i < 8; i++){
+          const x = Math.floor(Math.random() * COLS);
+          const y = Math.floor(Math.random() * ROWS);
+          if (map[y] && map[y][x] === T.GRASS) {
+            map[y][x] = T.FLOWER;
+          }
+        }
+        break;
+
+      case 'coast': // 下：海岸のエリア
+        // 下側に水を多く配置
+        for(let y = 7; y < ROWS; y++) {
+          for(let x = 0; x < COLS; x++) {
+            if (Math.random() > 0.3) {
+              map[y][x] = T.WATER;
+            }
+          }
+        }
+        // 砂浜
+        for(let y = 5; y < 7 && y < ROWS; y++) {
+          for(let x = 0; x < COLS; x++) {
+            if (map[y] && map[y][x] === T.GRASS) {
+              map[y][x] = T.SAND;
+            }
+          }
+        }
+        // パス
+        for(let y = 2; y < 5 && y < ROWS; y++) {
+          for(let x = 3; x < 17 && x < COLS; x++) {
+            if (map[y] && map[y][x] === T.GRASS) {
+              map[y][x] = T.PATH;
+            }
+          }
+        }
+        // 木を少し
+        for(let i = 0; i < 15; i++){
+          const x = Math.floor(Math.random() * COLS);
+          const y = Math.floor(Math.random() * 5);
+          if (map[y] && map[y][x] === T.GRASS) {
+            map[y][x] = T.TREE;
+          }
+        }
+        break;
+
+      case 'cave': // 左：洞窟のエリア
+        // 岩を多く配置
+        for(let i = 0; i < 40; i++){
+          const x = Math.floor(Math.random() * COLS);
+          const y = Math.floor(Math.random() * ROWS);
+          if (map[y] && map[y][x] === T.GRASS) {
+            map[y][x] = T.ROCK;
+          }
+        }
+        // 水（洞窟の水たまり）
+        for(let i = 0; i < 15; i++){
+          const x = Math.floor(Math.random() * COLS);
+          const y = Math.floor(Math.random() * ROWS);
+          if (map[y] && map[y][x] === T.GRASS) {
+            map[y][x] = T.WATER;
+          }
+        }
+        // パス
+        for(let y = 4; y < 7 && y < ROWS; y++) {
+          for(let x = 5; x < 15 && x < COLS; x++) {
+            if (map[y] && map[y][x] === T.GRASS) {
+              map[y][x] = T.PATH;
+            }
+          }
+        }
+        break;
+
+      case 'field': // 右：草原のエリア
+        // 花を多く配置
+        for(let i = 0; i < 30; i++){
+          const x = Math.floor(Math.random() * COLS);
+          const y = Math.floor(Math.random() * ROWS);
+          if (map[y] && map[y][x] === T.GRASS) {
+            map[y][x] = T.FLOWER;
+          }
+        }
+        // パス
+        for(let y = 3; y < 8 && y < ROWS; y++) {
+          for(let x = 2; x < 18 && x < COLS; x++) {
+            if (map[y] && map[y][x] === T.GRASS) {
+              map[y][x] = T.PATH;
+            }
+          }
+        }
+        // 木を少し
+        for(let i = 0; i < 10; i++){
+          const x = Math.floor(Math.random() * COLS);
+          const y = Math.floor(Math.random() * ROWS);
+          if (map[y] && map[y][x] === T.GRASS) {
+            map[y][x] = T.TREE;
+          }
+        }
+        break;
+
+      case 'ruins': // 北西：廃墟のエリア（森と洞窟の間）
+        // 岩を多く配置（廃墟の石）
+        for(let i = 0; i < 35; i++){
+          const x = Math.floor(Math.random() * COLS);
+          const y = Math.floor(Math.random() * ROWS);
+          if (map[y] && map[y][x] === T.GRASS) {
+            map[y][x] = T.ROCK;
+          }
+        }
+        // 中央に大きな遺跡エリア
+        for(let y = 4; y < 7 && y < ROWS; y++) {
+          for(let x = 6; x < 14 && x < COLS; x++) {
+            if (map[y] && map[y][x] === T.GRASS) {
+              map[y][x] = T.ROCK;
+            }
+          }
+        }
+        // パス（遺跡への道）
+        for(let y = 2; y < 9 && y < ROWS; y++) {
+          for(let x = 8; x < 12 && x < COLS; x++) {
+            if (map[y] && map[y][x] === T.GRASS) {
+              map[y][x] = T.PATH;
+            }
+          }
+        }
+        // 木を少し（森の名残）
+        for(let i = 0; i < 8; i++){
+          const x = Math.floor(Math.random() * COLS);
+          const y = Math.floor(Math.random() * ROWS);
+          if (map[y] && map[y][x] === T.GRASS) {
+            map[y][x] = T.TREE;
+          }
+        }
+        break;
+
+      case 'garden': // 北東：花畑のエリア（森と草原の間）
+        // 花を大量に配置
+        for(let i = 0; i < 50; i++){
+          const x = Math.floor(Math.random() * COLS);
+          const y = Math.floor(Math.random() * ROWS);
+          if (map[y] && map[y][x] === T.GRASS) {
+            map[y][x] = T.FLOWER;
+          }
+        }
+        // パス（花畑の中の小道）
+        for(let y = 4; y < 7 && y < ROWS; y++) {
+          for(let x = 3; x < 17 && x < COLS; x++) {
+            if (map[y] && map[y][x] === T.GRASS) {
+              map[y][x] = T.PATH;
+            }
+          }
+        }
+        // 木を少し（縁に）
+        for(let i = 0; i < 5; i++){
+          const x = Math.floor(Math.random() * COLS);
+          const y = Math.floor(Math.random() * 3);
+          if (map[y] && map[y][x] === T.GRASS) {
+            map[y][x] = T.TREE;
+          }
+        }
+        for(let i = 0; i < 5; i++){
+          const x = Math.floor(Math.random() * COLS);
+          const y = Math.floor(Math.random() * 3) + 8;
+          if (map[y] && map[y][x] === T.GRASS) {
+            map[y][x] = T.TREE;
+          }
+        }
+        break;
+
+      case 'cavecoast': // 南西：海岸洞窟のエリア（海岸と洞窟の間）
+        // 左側に洞窟風、右側に海岸風
+        // 左側に岩を配置
+        for(let i = 0; i < 25; i++){
+          const x = Math.floor(Math.random() * 10);
+          const y = Math.floor(Math.random() * ROWS);
+          if (map[y] && map[y][x] === T.GRASS) {
+            map[y][x] = T.ROCK;
+          }
+        }
+        // 右側に水を配置
+        for(let i = 0; i < 15; i++){
+          const x = Math.floor(Math.random() * 10) + 10;
+          const y = Math.floor(Math.random() * ROWS);
+          if (map[y] && map[y][x] === T.GRASS) {
+            map[y][x] = T.WATER;
+          }
+        }
+        // 下側に砂浜
+        for(let y = 8; y < ROWS; y++) {
+          for(let x = 0; x < COLS; x++) {
+            if (map[y] && map[y][x] === T.GRASS) {
+              map[y][x] = T.SAND;
+            }
+          }
+        }
+        // 中央にパス
+        for(let y = 3; y < 8 && y < ROWS; y++) {
+          for(let x = 8; x < 12 && x < COLS; x++) {
+            if (map[y] && map[y][x] === T.GRASS) {
+              map[y][x] = T.PATH;
+            }
+          }
+        }
+        break;
+
+      case 'beach': // 南東：ビーチのエリア（海岸と草原の間）
+        // 砂浜を多く配置
+        for(let y = 0; y < ROWS; y++) {
+          for(let x = 0; x < COLS; x++) {
+            if (map[y] && map[y][x] === T.GRASS && Math.random() > 0.3) {
+              map[y][x] = T.SAND;
+            }
+          }
+        }
+        // 下側に水
+        for(let y = 7; y < ROWS; y++) {
+          for(let x = 0; x < COLS; x++) {
+            if (map[y] && map[y][x] === T.SAND && Math.random() > 0.5) {
+              map[y][x] = T.WATER;
+            }
+          }
+        }
+        // パス（ビーチ沿い）
+        for(let y = 2; y < 6 && y < ROWS; y++) {
+          for(let x = 2; x < 18 && x < COLS; x++) {
+            if (map[y] && map[y][x] === T.SAND) {
+              map[y][x] = T.PATH;
+            }
+          }
+        }
+        // 花を少し（ビーチの装飾）
+        for(let i = 0; i < 10; i++){
+          const x = Math.floor(Math.random() * COLS);
+          const y = Math.floor(Math.random() * 6);
+          if (map[y] && map[y][x] === T.SAND) {
+            map[y][x] = T.FLOWER;
+          }
+        }
+        break;
+
+      case 'cactus': // 北東方向：サボテン、陽気な世界
+        // サボテンを多く配置
+        for(let i = 0; i < 40; i++){
+          const x = Math.floor(Math.random() * COLS);
+          const y = Math.floor(Math.random() * ROWS);
+          if (map[y] && map[y][x] === T.GRASS) {
+            map[y][x] = T.CACTUS;
+          }
+        }
+        // パス（陽気な道）
+        for(let y = 4; y < 7 && y < ROWS; y++) {
+          for(let x = 3; x < 17 && x < COLS; x++) {
+            if (map[y] && map[y][x] === T.GRASS) {
+              map[y][x] = T.PATH;
+            }
+          }
+        }
+        // 花を少し（明るい雰囲気）
+        for(let i = 0; i < 20; i++){
+          const x = Math.floor(Math.random() * COLS);
+          const y = Math.floor(Math.random() * ROWS);
+          if (map[y] && map[y][x] === T.GRASS) {
+            map[y][x] = T.FLOWER;
+          }
+        }
+        break;
+
+      case 'snow': // 北西方向：雪、森林地帯、山
+        // 雪を多く配置
+        for(let y = 0; y < ROWS; y++) {
+          for(let x = 0; x < COLS; x++) {
+            if (map[y] && map[y][x] === T.GRASS && Math.random() > 0.2) {
+              map[y][x] = T.SNOW;
+            }
+          }
+        }
+        // 山（岩）を配置
+        for(let i = 0; i < 30; i++){
+          const x = Math.floor(Math.random() * COLS);
+          const y = Math.floor(Math.random() * ROWS);
+          if (map[y] && map[y][x] === T.SNOW) {
+            map[y][x] = T.ROCK;
+          }
+        }
+        // 森（木）を配置
+        for(let i = 0; i < 25; i++){
+          const x = Math.floor(Math.random() * COLS);
+          const y = Math.floor(Math.random() * ROWS);
+          if (map[y] && map[y][x] === T.SNOW) {
+            map[y][x] = T.TREE;
+          }
+        }
+        // パス
+        for(let y = 5; y < 6 && y < ROWS; y++) {
+          for(let x = 2; x < 18 && x < COLS; x++) {
+            if (map[y] && map[y][x] === T.SNOW) {
+              map[y][x] = T.PATH;
+            }
+          }
+        }
+        break;
+
+      case 'desert': // 南西方向：砂漠と洞窟
+        // 砂漠を多く配置
+        for(let y = 0; y < ROWS; y++) {
+          for(let x = 0; x < COLS; x++) {
+            if (map[y] && map[y][x] === T.GRASS && Math.random() > 0.3) {
+              map[y][x] = T.DESERT;
+            }
+          }
+        }
+        // 洞窟（岩）を配置
+        for(let i = 0; i < 35; i++){
+          const x = Math.floor(Math.random() * COLS);
+          const y = Math.floor(Math.random() * ROWS);
+          if (map[y] && map[y][x] === T.DESERT) {
+            map[y][x] = T.ROCK;
+          }
+        }
+        // サボテンを少し
+        for(let i = 0; i < 15; i++){
+          const x = Math.floor(Math.random() * COLS);
+          const y = Math.floor(Math.random() * ROWS);
+          if (map[y] && map[y][x] === T.DESERT) {
+            map[y][x] = T.CACTUS;
+          }
+        }
+        // パス
+        for(let y = 4; y < 7 && y < ROWS; y++) {
+          for(let x = 5; x < 15 && x < COLS; x++) {
+            if (map[y] && map[y][x] === T.DESERT) {
+              map[y][x] = T.PATH;
+            }
+          }
+        }
+        break;
+
+      case 'ocean': // 南東方向：水と島、海洋
+        // 水を多く配置
+        for(let y = 0; y < ROWS; y++) {
+          for(let x = 0; x < COLS; x++) {
+            if (map[y] && map[y][x] === T.GRASS && Math.random() > 0.4) {
+              map[y][x] = T.WATER;
+            }
+          }
+        }
+        // 島（草）を配置
+        for(let i = 0; i < 8; i++){
+          const islandX = Math.floor(Math.random() * (COLS - 6)) + 3;
+          const islandY = Math.floor(Math.random() * (ROWS - 6)) + 3;
+          for(let y = islandY - 2; y < islandY + 3 && y < ROWS; y++) {
+            for(let x = islandX - 2; x < islandX + 3 && x < COLS; x++) {
+              if (map[y] && map[y][x] === T.WATER && Math.random() > 0.3) {
+                map[y][x] = T.GRASS;
+              }
+            }
+          }
+        }
+        // 島に木を配置
+        for(let i = 0; i < 15; i++){
+          const x = Math.floor(Math.random() * COLS);
+          const y = Math.floor(Math.random() * ROWS);
+          if (map[y] && map[y][x] === T.GRASS) {
+            map[y][x] = T.TREE;
+          }
+        }
+        // パス（橋のような）
+        for(let y = 2; y < 9 && y < ROWS; y++) {
+          for(let x = 9; x < 11 && x < COLS; x++) {
+            if (map[y] && map[y][x] === T.WATER) {
+              map[y][x] = T.PATH;
+            }
+          }
+        }
+        break;
+    }
+
+    return map;
   }
 
-  // マップ生成（安全な境界チェック付き）
-  for(let y = 3; y < 8 && y < ROWS; y++) {
-    for(let x = 4; x < 16 && x < COLS; x++) {
-      map[y][x] = T.PATH;
+  // マップ管理システム
+  const maps = new Map();
+  let currentMapX = 0, currentMapY = 0;
+  const visitedMaps = new Set(); // 訪問したマップを記録
+  
+  function getMapKey(x, y) {
+    return `${x},${y}`;
+  }
+  
+  function markMapVisited(x, y) {
+    visitedMaps.add(getMapKey(x, y));
+  }
+  
+  function isMapVisited(x, y) {
+    return visitedMaps.has(getMapKey(x, y));
+  }
+  
+  function getCurrentMap() {
+    const key = getMapKey(currentMapX, currentMapY);
+    if (!maps.has(key)) {
+      let mapType = 'village';
+      // 既存のマップ
+      if (currentMapX === 0 && currentMapY === -1) mapType = 'forest';
+      else if (currentMapX === 0 && currentMapY === 1) mapType = 'coast';
+      else if (currentMapX === -1 && currentMapY === 0) mapType = 'cave';
+      else if (currentMapX === 1 && currentMapY === 0) mapType = 'field';
+      else if (currentMapX === -1 && currentMapY === -1) mapType = 'ruins';
+      else if (currentMapX === 1 && currentMapY === -1) mapType = 'garden';
+      else if (currentMapX === -1 && currentMapY === 1) mapType = 'cavecoast';
+      else if (currentMapX === 1 && currentMapY === 1) mapType = 'beach';
+      // 新しいマップ：北東方向（サボテン、陽気な世界）
+      else if (currentMapX >= 2 || (currentMapX > 0 && currentMapY <= -2)) mapType = 'cactus';
+      // 新しいマップ：北西方向（雪、森林地帯、山）
+      else if (currentMapX <= -2 || (currentMapX < 0 && currentMapY <= -2)) mapType = 'snow';
+      // 新しいマップ：南西方向（砂漠と洞窟）
+      else if (currentMapX <= -2 || (currentMapX < 0 && currentMapY >= 2)) mapType = 'desert';
+      // 新しいマップ：南東方向（水と島、海洋）
+      else if (currentMapX >= 2 || (currentMapX > 0 && currentMapY >= 2)) mapType = 'ocean';
+      // その他の境界エリア
+      else if (currentMapY <= -2) {
+        if (currentMapX < 0) mapType = 'snow';
+        else mapType = 'cactus';
+      } else if (currentMapY >= 2) {
+        if (currentMapX < 0) mapType = 'desert';
+        else mapType = 'ocean';
+      } else if (currentMapX <= -2) {
+        if (currentMapY < 0) mapType = 'snow';
+        else mapType = 'desert';
+      } else if (currentMapX >= 2) {
+        if (currentMapY < 0) mapType = 'cactus';
+        else mapType = 'ocean';
+      }
+      maps.set(key, generateMap(mapType));
     }
+    return maps.get(key);
   }
 
-  // ランダム配置（安全）
-  for(let i = 0; i < 30; i++){
-    const x = Math.floor(Math.random() * COLS);
-    const y = Math.floor(Math.random() * ROWS);
-    if (map[y] && map[y][x] === T.GRASS) {
-      map[y][x] = T.TREE;
-    }
-  }
-  for(let i = 0; i < 10; i++){
-    const x = Math.floor(Math.random() * COLS);
-    const y = Math.floor(Math.random() * ROWS);
-    if (map[y] && map[y][x] === T.GRASS) {
-      map[y][x] = T.WATER;
-    }
-  }
-  for(let i = 0; i < 15; i++){
-    const x = Math.floor(Math.random() * COLS);
-    const y = Math.floor(Math.random() * ROWS);
-    if (map[y] && map[y][x] === T.GRASS) {
-      map[y][x] = T.FLOWER;
-    }
-  }
-
-  const isBlock = (t) => t === T.TREE || t === T.WATER;
+  const isBlock = (t) => t === T.TREE || t === T.WATER || t === T.ROCK || t === T.CACTUS || t === T.ICE;
 
   // サウンド
   const Sound = (() => {
@@ -507,6 +1046,9 @@
   const levelEl = document.getElementById('level');
   const hintEl = document.getElementById('hint');
   const levelUpEl = document.getElementById('levelUp');
+  const speechBubbleEl = document.getElementById('speechBubble');
+  const minimapCanvas = document.getElementById('minimap');
+  const minimapCtx = minimapCanvas.getContext('2d');
 
   function renderHUD(){
     heartEl.innerHTML = '';
@@ -523,6 +1065,154 @@
     state.hintTimer = secs;
     hintEl.textContent = txt;
     hintEl.classList.add('show');
+  }
+
+  let speechBubbleTimer = 0;
+  function showSpeechBubble(npc, text) {
+    speechBubbleEl.textContent = text;
+    speechBubbleEl.classList.add('show');
+    
+    // NPCの位置に吹き出しを配置
+    const canvasRect = canvas.getBoundingClientRect();
+    const stageRect = document.querySelector('.stage').getBoundingClientRect();
+    const scaleX = stageRect.width / W;
+    const scaleY = stageRect.height / H;
+    
+    const bubbleX = (npc.x * scaleX) + stageRect.left;
+    // 吹き出しの下の辺がNPCのアイコンの中央（y位置）に来るように調整
+    // まず一時的に配置して高さを取得
+    speechBubbleEl.style.left = `${bubbleX}px`;
+    speechBubbleEl.style.top = '0px';
+    speechBubbleEl.style.transform = 'translateX(-50%)';
+    
+    // 吹き出しの実際の高さを取得
+    const bubbleHeight = speechBubbleEl.offsetHeight;
+    // NPCのy位置（アイコンの中央）に吹き出しの下の辺が来るように
+    // さらに上に配置するため、追加のオフセットを引く
+    const additionalOffset = 35; // 追加で上に35px
+    const bubbleY = (npc.y * scaleY) + stageRect.top - bubbleHeight - additionalOffset;
+    
+    speechBubbleEl.style.top = `${bubbleY}px`;
+    
+    // 3秒後に自動的に消す
+    speechBubbleTimer = 3.0;
+  }
+
+  function hideSpeechBubble() {
+    speechBubbleEl.classList.remove('show');
+    speechBubbleTimer = 0;
+  }
+
+  // ミニマップ描画
+  function drawMinimap() {
+    minimapCtx.clearRect(0, 0, 150, 150);
+    
+    // 背景
+    minimapCtx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+    minimapCtx.fillRect(0, 0, 150, 150);
+    
+    // マップのサイズ（5x5グリッド表示）
+    const cellSize = 12; // 5x5グリッドに収めるため少し小さく
+    const drawSize = cellSize - 1; // 実際の描画サイズ（11px）
+    
+    // 中央マップ(0,0)のマスの中心がミニマップの中心に来るようにオフセットを計算
+    // 中央マップは(2,2)の位置（5x5グリッドの中央）
+    // ミニマップの中心: (150/2, 150/2) = (75, 75)
+    // マスの中心が(75, 75)になるように
+    // マスの左上 = 中心 - drawSize/2
+    // offsetX + 2 * cellSize + drawSize/2 = 75
+    // offsetX = 75 - 2 * cellSize - drawSize/2
+    const offsetX = 75 - 2 * cellSize - drawSize / 2; // 75 - 24 - 5.5 = 45.5
+    const offsetY = 75 - 2 * cellSize - drawSize / 2; // 75 - 24 - 5.5 = 45.5
+    
+    // 訪問したマップを描画
+    const mapTypes = {
+      '0,0': { name: '村', color: '#8b7355' },
+      '0,-1': { name: '森', color: '#228b22' },
+      '0,1': { name: '海岸', color: '#1e3a8a' },
+      '-1,0': { name: '洞窟', color: '#555' },
+      '1,0': { name: '草原', color: '#2d5016' },
+      '-1,-1': { name: '廃墟', color: '#666' },
+      '1,-1': { name: '花畑', color: '#ff69b4' },
+      '-1,1': { name: '海岸洞窟', color: '#4a5568' },
+      '1,1': { name: 'ビーチ', color: '#d4a574' }
+    };
+    
+    // 新しいマップタイプの色を動的に決定
+    const getMapColor = (x, y) => {
+      const key = getMapKey(x, y);
+      if (mapTypes[key]) return mapTypes[key].color;
+      
+      // 新しいマップタイプの色
+      if (x >= 2 || (x > 0 && y <= -2)) return '#90EE90'; // サボテン（明るい緑）
+      if (x <= -2 || (x < 0 && y <= -2)) return '#E0E0E0'; // 雪（白）
+      if (x <= -2 || (x < 0 && y >= 2)) return '#D2B48C'; // 砂漠（ベージュ）
+      if (x >= 2 || (x > 0 && y >= 2)) return '#4169E1'; // 海洋（青）
+      return '#666'; // デフォルト
+    };
+    
+    // 各マップ位置を描画（5x5グリッド、中央が(2,2)）
+    // x: -2から2まで、y: -2から2まで
+    const mapPositions = [];
+    for(let y = -2; y <= 2; y++) {
+      for(let x = -2; x <= 2; x++) {
+        mapPositions.push({
+          key: `${x},${y}`,
+          x: x + 2, // -2を0に、0を2に、2を4に変換
+          y: y + 2  // -2を0に、0を2に、2を4に変換
+        });
+      }
+    }
+    
+    for (const pos of mapPositions) {
+      const [mx, my] = pos.key.split(',').map(Number);
+      const isVisited = isMapVisited(mx, my);
+      const isCurrent = (currentMapX === mx && currentMapY === my);
+      
+      if (isVisited || isCurrent) {
+        const mapColor = mapTypes[pos.key] ? mapTypes[pos.key].color : getMapColor(mx, my);
+        const px = offsetX + pos.x * cellSize;
+        const py = offsetY + pos.y * cellSize;
+        
+        // マップセルを描画
+        minimapCtx.fillStyle = isCurrent ? '#ffd700' : mapColor;
+        minimapCtx.fillRect(px, py, cellSize - 2, cellSize - 2);
+        
+        // 現在位置のハイライト
+        if (isCurrent) {
+          minimapCtx.strokeStyle = '#fff';
+          minimapCtx.lineWidth = 1.5;
+          minimapCtx.strokeRect(px - 0.5, py - 0.5, cellSize - 1, cellSize - 1);
+          
+          // 現在位置のインジケーター
+          minimapCtx.fillStyle = '#fff';
+          minimapCtx.beginPath();
+          minimapCtx.arc(px + cellSize/2, py + cellSize/2, 2, 0, Math.PI * 2);
+          minimapCtx.fill();
+        } else {
+          // 訪問済みマップの枠
+          minimapCtx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+          minimapCtx.lineWidth = 0.5;
+          minimapCtx.strokeRect(px, py, cellSize - 2, cellSize - 2);
+        }
+      }
+    }
+    
+    // グリッド線（デバッグ用、必要に応じてコメントアウト）
+    // minimapCtx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+    // minimapCtx.lineWidth = 1;
+    // for (let i = 0; i <= 3; i++) {
+    //   minimapCtx.beginPath();
+    //   minimapCtx.moveTo(offsetX + i * cellSize, offsetY);
+    //   minimapCtx.lineTo(offsetX + i * cellSize, offsetY + 3 * cellSize);
+    //   minimapCtx.stroke();
+    // }
+    // for (let i = 0; i <= 3; i++) {
+    //   minimapCtx.beginPath();
+    //   minimapCtx.moveTo(offsetX, offsetY + i * cellSize);
+    //   minimapCtx.lineTo(offsetX + 3 * cellSize, offsetY + i * cellSize);
+    //   minimapCtx.stroke();
+    // }
   }
 
   function gainExp(amount) {
@@ -593,6 +1283,90 @@
     }
   }
 
+  class CactusMonster extends Entity {
+    constructor(x,y) {
+      super(x,y);
+      this.speed=20; this.hp=3; this.change=0; this.spikeT=0;
+    }
+    update(dt) {
+      this.spikeT += dt * 3;
+      if ((this.change-=dt)<=0) {
+        this.change = Math.random() * 2.5 + 1.0;
+        const ang = Math.random() * Math.PI * 2;
+        this.vx = Math.cos(ang) * this.speed;
+        this.vy = Math.sin(ang) * this.speed;
+      }
+    }
+  }
+
+  class SnowWolf extends Entity {
+    constructor(x,y) {
+      super(x,y);
+      this.speed=40; this.hp=2; this.change=0; this.howlT=0;
+    }
+    update(dt) {
+      this.howlT += dt * 2;
+      if ((this.change-=dt)<=0) {
+        this.change = Math.random() * 1.5 + 0.5;
+        // プレイヤーに向かって移動
+        const dx = player.x - this.x;
+        const dy = player.y - this.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist > 0 && dist < 200) {
+          this.vx = (dx / dist) * this.speed;
+          this.vy = (dy / dist) * this.speed;
+        } else {
+          const ang = Math.random() * Math.PI * 2;
+          this.vx = Math.cos(ang) * this.speed;
+          this.vy = Math.sin(ang) * this.speed;
+        }
+      }
+    }
+  }
+
+  class DesertScorpion extends Entity {
+    constructor(x,y) {
+      super(x,y);
+      this.speed=30; this.hp=4; this.change=0; this.stingT=0;
+    }
+    update(dt) {
+      this.stingT += dt * 5;
+      if ((this.change-=dt)<=0) {
+        this.change = Math.random() * 2 + 0.8;
+        const ang = Math.random() * Math.PI * 2;
+        this.vx = Math.cos(ang) * this.speed;
+        this.vy = Math.sin(ang) * this.speed;
+      }
+    }
+  }
+
+  class OceanKraken extends Entity {
+    constructor(x,y) {
+      super(x,y);
+      this.hp=5; this.cd=0; this.range=200; this.tentacleT=0; this.alertT=0;
+    }
+    update(dt) {
+      this.tentacleT += dt * 2;
+      if (this.alertT > 0) this.alertT -= dt;
+    }
+  }
+
+  class FireSpirit extends Entity {
+    constructor(x,y) {
+      super(x,y);
+      this.speed=35; this.hp=2; this.change=0; this.flameT=0;
+    }
+    update(dt) {
+      this.flameT += dt * 6;
+      if ((this.change-=dt)<=0) {
+        this.change = Math.random() * 1.8 + 0.6;
+        const ang = Math.random() * Math.PI * 2;
+        this.vx = Math.cos(ang) * this.speed;
+        this.vy = Math.sin(ang) * this.speed;
+      }
+    }
+  }
+
   class Arrow extends Entity {
     constructor(x,y,vx,vy) {
       super(x,y);
@@ -612,36 +1386,208 @@
     }
   }
 
-  // ゲームオブジェクト
+  // ゲームオブジェクト（マップごとに管理）
   const player = new Player(160, 96);
-  const npcs = [{
-    x: 160, y: 56, r: 14, 
-    text: '🧙‍♂️ ようこそ、勇者よ！\n私は村の魔法使いです。\n\n危険なモンスターが増えています。\n君の力で村を守ってくれ！', 
-    talked: false,
-    rewardShown: false
-  }];
-  const chests = [{x: 208, y: 96, r: 12, opened:false}, {x: 80, y: 140, r: 12, opened:false}];
-  const slimes = [new Slime(80,40), new Slime(260,120), new Slime(50,160)];
-  const archers = [new Archer(56,40), new Archer(280,60)];
+  const mapEntities = new Map(); // マップごとのエンティティを管理
+  
+  function getMapEntities() {
+    const key = getMapKey(currentMapX, currentMapY);
+    if (!mapEntities.has(key)) {
+      const entities = {
+        npcs: [],
+        chests: [],
+        slimes: [],
+        archers: [],
+        cacti: [],
+        snowwolves: [],
+        scorpions: [],
+        krakens: [],
+        firespirits: []
+      };
+      
+      // マップタイプに応じてエンティティを配置
+      if (currentMapX === 0 && currentMapY === 0) {
+        // 中央：村のフィールド
+        entities.npcs = [{
+          x: 160, y: 56, r: 14, 
+          texts: [
+            'ようこそ、勇者よ！\n私はこの村の長老だ。',
+            '最近、危険なモンスターが\n増えて困っているんだ。',
+            '君の力で村を守って\nくれるとありがたい。',
+            '⚔️ボタンで攻撃、\n💣ボタンで爆弾が使えるぞ。',
+            '頑張ってくれ！'
+          ],
+          deathTexts: [
+            'おいおい...また死んじまったのか。',
+            '頼んだのに、こんなに\n弱いんじゃ困るんだよ。',
+            '村の期待を裏切る気か？\nもっと気合を入れろ！',
+            'コインも半分になっちまった...\n次は気をつけろよ。',
+            'まあ、生き返ってくれただけ\nマシかもしれんがな...'
+          ],
+          currentTextIndex: 0,
+          talked: false,
+          rewardShown: false
+        }];
+        entities.chests = [{x: 208, y: 96, r: 12, opened:false}, {x: 80, y: 140, r: 12, opened:false}];
+        entities.slimes = [new Slime(80,40), new Slime(260,120), new Slime(50,160)];
+        entities.archers = [new Archer(56,40), new Archer(280,60)];
+      } else if (currentMapX === 0 && currentMapY === -1) {
+        // 上：森のエリア
+        entities.chests = [{x: 160, y: 80, r: 12, opened:false}];
+        entities.slimes = [new Slime(100,50), new Slime(220,70), new Slime(60,100), new Slime(260,40)];
+        entities.archers = [new Archer(80,60), new Archer(240,90)];
+      } else if (currentMapX === 0 && currentMapY === 1) {
+        // 下：海岸のエリア
+        entities.chests = [{x: 160, y: 50, r: 12, opened:false}, {x: 240, y: 60, r: 12, opened:false}];
+        entities.slimes = [new Slime(100,40), new Slime(220,50), new Slime(60,30)];
+        entities.archers = [new Archer(120,45)];
+      } else if (currentMapX === -1 && currentMapY === 0) {
+        // 左：洞窟のエリア
+        entities.chests = [{x: 160, y: 90, r: 12, opened:false}];
+        entities.slimes = [new Slime(80,50), new Slime(240,70), new Slime(120,100), new Slime(200,40)];
+        entities.archers = [new Archer(100,60), new Archer(220,80)];
+      } else if (currentMapX === 1 && currentMapY === 0) {
+        // 右：草原のエリア
+        entities.chests = [{x: 160, y: 80, r: 12, opened:false}, {x: 80, y: 100, r: 12, opened:false}];
+        entities.slimes = [new Slime(100,50), new Slime(220,70), new Slime(60,90)];
+        entities.archers = [new Archer(140,60), new Archer(260,80)];
+      } else if (currentMapX === -1 && currentMapY === -1) {
+        // 北西：廃墟のエリア
+        entities.chests = [{x: 160, y: 80, r: 12, opened:false}];
+        entities.slimes = [new Slime(120,60), new Slime(200,80), new Slime(80,100)];
+        entities.archers = [new Archer(100,70), new Archer(220,90)];
+      } else if (currentMapX === 1 && currentMapY === -1) {
+        // 北東：花畑のエリア
+        entities.chests = [{x: 160, y: 80, r: 12, opened:false}, {x: 240, y: 60, r: 12, opened:false}];
+        entities.slimes = [new Slime(100,50), new Slime(180,70)];
+        entities.archers = [new Archer(120,60)];
+      } else if (currentMapX === -1 && currentMapY === 1) {
+        // 南西：海岸洞窟のエリア
+        entities.chests = [{x: 80, y: 80, r: 12, opened:false}, {x: 240, y: 100, r: 12, opened:false}];
+        entities.slimes = [new Slime(60,50), new Slime(200,70), new Slime(100,120)];
+        entities.archers = [new Archer(80,60), new Archer(220,80)];
+      } else if (currentMapX === 1 && currentMapY === 1) {
+        // 南東：ビーチのエリア
+        entities.chests = [{x: 160, y: 50, r: 12, opened:false}, {x: 240, y: 70, r: 12, opened:false}];
+        entities.slimes = [new Slime(100,40), new Slime(220,60), new Slime(60,50)];
+        entities.archers = [new Archer(140,45)];
+      } else if (currentMapX >= 2 || (currentMapX > 0 && currentMapY <= -2)) {
+        // 北東方向：サボテン、陽気な世界
+        entities.chests = [{x: 160, y: 80, r: 12, opened:false}, {x: 80, y: 100, r: 12, opened:false}, {x: 240, y: 60, r: 12, opened:false}];
+        entities.cacti = [new CactusMonster(100,50), new CactusMonster(220,70), new CactusMonster(60,90), new CactusMonster(260,50)];
+        entities.firespirits = [new FireSpirit(140,60), new FireSpirit(180,80)];
+      } else if (currentMapX <= -2 || (currentMapX < 0 && currentMapY <= -2)) {
+        // 北西方向：雪、森林地帯、山
+        entities.chests = [{x: 160, y: 80, r: 12, opened:false}, {x: 80, y: 60, r: 12, opened:false}];
+        entities.snowwolves = [new SnowWolf(100,50), new SnowWolf(220,70), new SnowWolf(60,100), new SnowWolf(240,40)];
+        entities.archers = [new Archer(120,60), new Archer(200,80)];
+      } else if (currentMapX <= -2 || (currentMapX < 0 && currentMapY >= 2)) {
+        // 南西方向：砂漠と洞窟
+        entities.chests = [{x: 160, y: 80, r: 12, opened:false}, {x: 80, y: 100, r: 12, opened:false}];
+        entities.scorpions = [new DesertScorpion(100,50), new DesertScorpion(220,70), new DesertScorpion(60,90), new DesertScorpion(240,100)];
+        entities.archers = [new Archer(120,60)];
+      } else if (currentMapX >= 2 || (currentMapX > 0 && currentMapY >= 2)) {
+        // 南東方向：水と島、海洋
+        entities.chests = [{x: 160, y: 50, r: 12, opened:false}, {x: 240, y: 70, r: 12, opened:false}, {x: 80, y: 40, r: 12, opened:false}];
+        entities.krakens = [new OceanKraken(100,40), new OceanKraken(220,60), new OceanKraken(60,50), new OceanKraken(260,80)];
+        entities.archers = [new Archer(140,45)];
+      } else if (currentMapY <= -2) {
+        // その他の北側エリア
+        if (currentMapX < 0) {
+          entities.chests = [{x: 160, y: 80, r: 12, opened:false}];
+          entities.slimes = [new Slime(100,50), new Slime(220,70)];
+          entities.archers = [new Archer(140,60)];
+        } else {
+          entities.chests = [{x: 160, y: 80, r: 12, opened:false}, {x: 240, y: 60, r: 12, opened:false}];
+          entities.slimes = [new Slime(100,50), new Slime(220,70), new Slime(60,90)];
+          entities.archers = [new Archer(140,60)];
+        }
+      } else if (currentMapY >= 2) {
+        // その他の南側エリア
+        if (currentMapX < 0) {
+          entities.chests = [{x: 160, y: 80, r: 12, opened:false}];
+          entities.slimes = [new Slime(100,50), new Slime(220,70), new Slime(60,90)];
+          entities.archers = [new Archer(120,60)];
+        } else {
+          entities.chests = [{x: 160, y: 50, r: 12, opened:false}, {x: 240, y: 70, r: 12, opened:false}];
+          entities.slimes = [new Slime(100,40), new Slime(220,60), new Slime(60,50)];
+          entities.archers = [new Archer(140,45)];
+        }
+      } else if (currentMapX <= -2) {
+        // その他の西側エリア
+        if (currentMapY < 0) {
+          entities.chests = [{x: 160, y: 80, r: 12, opened:false}];
+          entities.slimes = [new Slime(100,50), new Slime(220,70)];
+          entities.archers = [new Archer(140,60)];
+        } else {
+          entities.chests = [{x: 160, y: 80, r: 12, opened:false}];
+          entities.slimes = [new Slime(100,50), new Slime(220,70), new Slime(60,90)];
+          entities.archers = [new Archer(120,60)];
+        }
+      } else if (currentMapX >= 2) {
+        // その他の東側エリア
+        if (currentMapY < 0) {
+          entities.chests = [{x: 160, y: 80, r: 12, opened:false}, {x: 240, y: 60, r: 12, opened:false}];
+          entities.slimes = [new Slime(100,50), new Slime(220,70), new Slime(60,90)];
+          entities.archers = [new Archer(140,60)];
+        } else {
+          entities.chests = [{x: 160, y: 50, r: 12, opened:false}, {x: 240, y: 70, r: 12, opened:false}];
+          entities.slimes = [new Slime(100,40), new Slime(220,60), new Slime(60,50)];
+          entities.archers = [new Archer(140,45)];
+        }
+      }
+      
+      mapEntities.set(key, entities);
+    }
+    return mapEntities.get(key);
+  }
+  
   const arrows = [];
   const bombs = [];
   const blasts = [];
 
   // 安全な衝突判定
   function getTile(x, y) {
+    const map = getCurrentMap();
     if (y < 0 || y >= ROWS || x < 0 || x >= COLS) return T.TREE; // 境界外は壁
     if (!map[y] || map[y][x] === undefined) return T.TREE;
     return map[y][x];
   }
 
-  function moveWithTile(e, dt) {
+  function moveWithTile(e, dt, allowEdgePass = false) {
     let nx = e.x + e.vx * dt;
     let ny = e.y + e.vy * dt;
-    if (!collidesTile(nx, e.y, e.w, e.h)) e.x = nx; else e.vx=0;
-    if (!collidesTile(e.x, ny, e.w, e.h)) e.y = ny; else e.vy=0;
+    
+    // プレイヤーの場合、画面端での衝突判定をスキップ
+    if (allowEdgePass) {
+      // 画面端に近い場合は、タイル衝突判定をスキップ
+      const nearLeftEdge = nx < TS;
+      const nearRightEdge = nx > W - TS;
+      const nearTopEdge = ny < TS;
+      const nearBottomEdge = ny > H - TS;
+      
+      if (nearLeftEdge || nearRightEdge || nearTopEdge || nearBottomEdge) {
+        // 画面端に近い場合は移動を許可（マップ切り替えのため）
+        e.x = nx;
+        e.y = ny;
+      } else {
+        // 通常の衝突判定
+        if (!collidesTile(nx, e.y, e.w, e.h)) e.x = nx; else e.vx=0;
+        if (!collidesTile(e.x, ny, e.w, e.h)) e.y = ny; else e.vy=0;
+      }
+    } else {
+      // 通常の移動処理
+      if (!collidesTile(nx, e.y, e.w, e.h)) e.x = nx; else e.vx=0;
+      if (!collidesTile(e.x, ny, e.w, e.h)) e.y = ny; else e.vy=0;
+    }
   }
 
   function collidesTile(cx, cy, w, h) {
+    // 画面外の場合は衝突しない（マップ切り替えを許可）
+    if (cx - w/2 < 0 || cx + w/2 > W || cy - h/2 < 0 || cy + h/2 > H) {
+      return false;
+    }
+    
     const x0 = Math.floor((cx-w/2)/TS);
     const x1 = Math.floor((cx+w/2)/TS);
     const y0 = Math.floor((cy-h/2)/TS);
@@ -673,8 +1619,9 @@
     const ay = player.y + dirY*range;
     const hit = (e) => Math.abs(e.x-ax)<w/2 && Math.abs(e.y-ay)<h/2;
     
+    const entities = getMapEntities();
     let hitSomething = false;
-    for (const s of slimes) {
+    for (const s of entities.slimes) {
       if (!s.dead && hit(s)) {
         s.hp--;
         hitSomething = true;
@@ -688,7 +1635,7 @@
         }
       }
     }
-    for (const a of archers) {
+    for (const a of entities.archers) {
       if (!a.dead && hit(a)) {
         a.hp--;
         a.alertT = 0.5;
@@ -698,6 +1645,77 @@
           state.coins+=5;
           gainExp(3);
           showHint('🏹 アーチャー撃破! +5💰');
+        } else {
+          Sound.playSound('hit');
+        }
+      }
+    }
+    for (const c of entities.cacti) {
+      if (!c.dead && hit(c)) {
+        c.hp--;
+        hitSomething = true;
+        if (c.hp<=0) {
+          c.dead=true;
+          state.coins+=4;
+          gainExp(2);
+          showHint('🌵 サボテンモンスター撃破! +4💰');
+        } else {
+          Sound.playSound('hit');
+        }
+      }
+    }
+    for (const w of entities.snowwolves) {
+      if (!w.dead && hit(w)) {
+        w.hp--;
+        hitSomething = true;
+        if (w.hp<=0) {
+          w.dead=true;
+          state.coins+=4;
+          gainExp(3);
+          showHint('🐺 雪オオカミ撃破! +4💰');
+        } else {
+          Sound.playSound('hit');
+        }
+      }
+    }
+    for (const sc of entities.scorpions) {
+      if (!sc.dead && hit(sc)) {
+        sc.hp--;
+        hitSomething = true;
+        if (sc.hp<=0) {
+          sc.dead=true;
+          state.coins+=5;
+          gainExp(3);
+          showHint('🦂 サソリ撃破! +5💰');
+        } else {
+          Sound.playSound('hit');
+        }
+      }
+    }
+    for (const k of entities.krakens) {
+      if (!k.dead && hit(k)) {
+        k.hp--;
+        k.alertT = 0.5;
+        hitSomething = true;
+        if (k.hp<=0) {
+          k.dead=true;
+          state.coins+=6;
+          gainExp(4);
+          showHint('🐙 クラーケン撃破! +6💰');
+        } else {
+          Sound.playSound('hit');
+        }
+      }
+    }
+    for (const f of entities.firespirits) {
+      if (!f.dead && hit(f)) {
+        f.hp--;
+        hitSomething = true;
+        if (f.hp<=0) {
+          f.dead=true;
+          state.coins+=4;
+          gainExp(2);
+          showHint('🔥 炎の精霊撃破! +4💰');
         } else {
           Sound.playSound('hit');
         }
@@ -722,11 +1740,19 @@
     if (player.hp<=0) respawn();
   }
 
+  let justRespawned = false; // リスポーン直後のフラグ
+  
   function respawn() {
     state.coins = Math.max(0, Math.floor(state.coins/2));
+    // 中央マップに戻る
+    currentMapX = 0;
+    currentMapY = 0;
     player.x=160; player.y=96;
     player.hp=player.maxHp;
     state.hp=player.hp;
+    arrows.length = 0; // 矢をクリア
+    hideSpeechBubble();
+    justRespawned = true; // リスポーン直後フラグを立てる
     showHint('🏠 村に戻りました');
     Sound.playSound('talk');
   }
@@ -832,22 +1858,23 @@
         break;
         
       case 'npc':
-        // 魔法使い風NPC
-        ctx.fillStyle = '#8b4b9c';
+        // 老人風NPC
+        ctx.fillStyle = '#6b4423';
         ctx.fillRect(x-6, y-8, 12, 16);
         
         // 頭
         ctx.fillStyle = '#fdbcb4';
         ctx.fillRect(x-4, y-10, 8, 6);
         
-        // 帽子
+        // 帽子（つば広帽子風）
         ctx.fillStyle = '#4a4a4a';
-        ctx.fillRect(x-5, y-14, 10, 6);
-        ctx.fillRect(x+3, y-16, 3, 3);
+        ctx.fillRect(x-6, y-14, 12, 3);
+        ctx.fillRect(x-5, y-11, 10, 2);
         
-        // ひげ
+        // 長いひげ
         ctx.fillStyle = '#ddd';
-        ctx.fillRect(x-3, y-6, 6, 3);
+        ctx.fillRect(x-4, y-6, 8, 4);
+        ctx.fillRect(x-3, y-4, 6, 2);
         
         // 杖
         ctx.strokeStyle = '#8b4513';
@@ -857,9 +1884,121 @@
         ctx.lineTo(x + 8, y - 10);
         ctx.stroke();
         
-        // 杖の先（星）
-        ctx.fillStyle = '#ffd700';
-        ctx.fillRect(x + 7, y - 12, 3, 3);
+        // 杖の先（丸い装飾）
+        ctx.fillStyle = '#8b4513';
+        ctx.beginPath();
+        ctx.arc(x + 8, y - 10, 2, 0, Math.PI * 2);
+        ctx.fill();
+        break;
+        
+      case 'cactus':
+        const spike = entity ? Math.sin(entity.spikeT) * 0.5 : 0;
+        // サボテンモンスター
+        ctx.fillStyle = '#4a7c59';
+        ctx.fillRect(x-6, y-8, 12, 16);
+        // トゲ
+        ctx.fillStyle = '#1a3d2e';
+        for(let i = 0; i < 4; i++) {
+          const tx = x - 4 + i * 3;
+          ctx.fillRect(tx, y - 6 + spike, 1, 2);
+          ctx.fillRect(tx, y + 4 + spike, 1, 2);
+        }
+        // 目
+        ctx.fillStyle = '#ff0000';
+        ctx.fillRect(x-3, y-4, 2, 2);
+        ctx.fillRect(x+1, y-4, 2, 2);
+        break;
+        
+      case 'snowwolf':
+        const howl = entity ? Math.sin(entity.howlT) * 1 : 0;
+        // 雪オオカミ
+        ctx.fillStyle = '#e0e0e0';
+        ctx.fillRect(x-7, y-7, 14, 14);
+        // 耳
+        ctx.fillStyle = '#c0c0c0';
+        ctx.fillRect(x-6, y-9, 4, 4);
+        ctx.fillRect(x+2, y-9, 4, 4);
+        // 目
+        ctx.fillStyle = '#0000ff';
+        ctx.fillRect(x-3, y-4, 2, 2);
+        ctx.fillRect(x+1, y-4, 2, 2);
+        // 口
+        ctx.fillStyle = '#000';
+        ctx.fillRect(x-2, y+2 + howl, 4, 2);
+        break;
+        
+      case 'scorpion':
+        const sting = entity ? Math.sin(entity.stingT) * 1.5 : 0;
+        // サソリ
+        ctx.fillStyle = '#8b4513';
+        ctx.fillRect(x-5, y-5, 10, 8);
+        // 頭
+        ctx.fillRect(x-4, y-7, 8, 4);
+        // 尾
+        ctx.strokeStyle = '#654321';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(x+5, y+3);
+        ctx.lineTo(x+8, y-2 + sting);
+        ctx.stroke();
+        // 目
+        ctx.fillStyle = '#ff0000';
+        ctx.fillRect(x-2, y-6, 1, 1);
+        ctx.fillRect(x+1, y-6, 1, 1);
+        // 脚
+        ctx.strokeStyle = '#654321';
+        ctx.lineWidth = 1;
+        for(let i = 0; i < 4; i++) {
+          const lx = x - 4 + i * 2.5;
+          ctx.beginPath();
+          ctx.moveTo(lx, y+3);
+          ctx.lineTo(lx - 2, y+6);
+          ctx.stroke();
+        }
+        break;
+        
+      case 'kraken':
+        const tentacle = entity ? Math.sin(entity.tentacleT) * 2 : 0;
+        // クラーケン
+        ctx.fillStyle = '#2c3e50';
+        ctx.beginPath();
+        ctx.arc(x, y, 10, 0, Math.PI * 2);
+        ctx.fill();
+        // 目
+        ctx.fillStyle = '#ff0000';
+        ctx.fillRect(x-4, y-3, 3, 3);
+        ctx.fillRect(x+1, y-3, 3, 3);
+        // 触手
+        ctx.strokeStyle = '#1a1a2e';
+        ctx.lineWidth = 2;
+        for(let i = 0; i < 4; i++) {
+          const ang = (i / 4) * Math.PI * 2;
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.lineTo(x + Math.cos(ang) * (8 + tentacle), y + Math.sin(ang) * (8 + tentacle));
+          ctx.stroke();
+        }
+        break;
+        
+      case 'firespirit':
+        const flame = entity ? Math.sin(entity.flameT) * 1.5 : 0;
+        // 炎の精霊
+        ctx.fillStyle = '#ff4500';
+        ctx.beginPath();
+        ctx.arc(x, y + flame, 7, 0, Math.PI * 2);
+        ctx.fill();
+        // 炎の外側
+        ctx.fillStyle = '#ffaa00';
+        ctx.beginPath();
+        ctx.arc(x - 2, y - 2 + flame, 4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(x + 2, y - 1 + flame, 4, 0, Math.PI * 2);
+        ctx.fill();
+        // 目
+        ctx.fillStyle = '#ffff00';
+        ctx.fillRect(x-2, y-1 + flame, 1, 1);
+        ctx.fillRect(x+1, y-1 + flame, 1, 1);
         break;
     }
     
@@ -871,9 +2010,10 @@
     ctx.clearRect(0,0,W,H);
 
     // タイル
+    const map = getCurrentMap();
     for(let y=0;y<ROWS;y++) {
       for(let x=0;x<COLS;x++){
-        const t = getTile(x, y);
+        const t = map[y][x];
         const px = x*TS, py=y*TS;
         
         switch(t){
@@ -927,12 +2067,95 @@
             ctx.fillStyle='#ffd700';
             ctx.fillRect(px+7, py+7, 2, 2);
             break;
+            
+          case T.ROCK:
+            ctx.fillStyle='#2d5016';
+            ctx.fillRect(px,py,TS,TS);
+            ctx.fillStyle='#555';
+            ctx.fillRect(px+2, py+2, 12, 12);
+            ctx.fillStyle='#666';
+            ctx.fillRect(px+4, py+4, 8, 8);
+            ctx.fillStyle='#444';
+            ctx.fillRect(px+6, py+6, 4, 4);
+            break;
+            
+          case T.SAND:
+            ctx.fillStyle='#d4a574';
+            ctx.fillRect(px,py,TS,TS);
+            ctx.fillStyle='#c9a068';
+            ctx.fillRect(px+2, py+2, 5, 5);
+            ctx.fillRect(px+9, py+9, 5, 5);
+            break;
+            
+          case T.CACTUS:
+            ctx.fillStyle='#2d5016';
+            ctx.fillRect(px,py,TS,TS);
+            // サボテンの本体
+            ctx.fillStyle='#4a7c59';
+            ctx.fillRect(px+6, py+2, 4, 12);
+            // サボテンの腕
+            ctx.fillRect(px+2, py+6, 3, 4);
+            ctx.fillRect(px+11, py+8, 3, 4);
+            // トゲ
+            ctx.fillStyle='#1a3d2e';
+            ctx.fillRect(px+6, py+4, 1, 1);
+            ctx.fillRect(px+9, py+6, 1, 1);
+            ctx.fillRect(px+7, py+9, 1, 1);
+            break;
+            
+          case T.SNOW:
+            ctx.fillStyle='#e8f4f8';
+            ctx.fillRect(px,py,TS,TS);
+            ctx.fillStyle='#d0e8f0';
+            ctx.fillRect(px+2, py+2, 5, 5);
+            ctx.fillRect(px+9, py+9, 5, 5);
+            // 雪の結晶
+            ctx.fillStyle='#ffffff';
+            ctx.fillRect(px+7, py+3, 1, 1);
+            ctx.fillRect(px+6, py+7, 1, 1);
+            ctx.fillRect(px+8, py+7, 1, 1);
+            break;
+            
+          case T.DESERT:
+            ctx.fillStyle='#d2b48c';
+            ctx.fillRect(px,py,TS,TS);
+            ctx.fillStyle='#c19a6b';
+            ctx.fillRect(px+2, py+2, 5, 5);
+            ctx.fillRect(px+9, py+9, 5, 5);
+            // 砂の波紋
+            ctx.fillStyle='#b8860b';
+            for(let i = 0; i < 3; i++) {
+              const wx = px + (i * 5);
+              ctx.fillRect(wx, py + 8, 3, 1);
+            }
+            break;
+            
+          case T.ICE:
+            ctx.fillStyle='#1e3a8a';
+            ctx.fillRect(px,py,TS,TS);
+            const iceTime = performance.now() * 0.003;
+            const iceWave = Math.sin(iceTime + x + y) * 0.2;
+            ctx.fillStyle=`rgba(173,216,230,${0.4 + iceWave})`;
+            ctx.fillRect(px,py,TS,TS);
+            // 氷のひび
+            ctx.strokeStyle='rgba(255,255,255,0.3)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(px+2, py+2);
+            ctx.lineTo(px+6, py+8);
+            ctx.moveTo(px+10, py+4);
+            ctx.lineTo(px+14, py+12);
+            ctx.stroke();
+            break;
         }
       }
     }
 
+    // 現在のマップのエンティティを取得
+    const entities = getMapEntities();
+    
     // NPC
-    for (const n of npcs){
+    for (const n of entities.npcs){
       drawCharacter(n.x, n.y, 'npc');
       if (!n.talked) {
         ctx.fillStyle = '#ffff00';
@@ -942,7 +2165,7 @@
     }
     
     // 宝箱
-    for (const c of chests){ 
+    for (const c of entities.chests){ 
       const chestColor = c.opened? '#8e6b3f' : '#d4af37';
       ctx.fillStyle = chestColor;
       ctx.fillRect(c.x-8,c.y-6,16,12);
@@ -1014,13 +2237,33 @@
     }
 
     // 敵
-    for (const s of slimes){ 
+    for (const s of entities.slimes){ 
       if (s.dead) continue; 
       drawCharacter(s.x, s.y, 'slime', s);
     }
-    for (const a of archers){ 
+    for (const a of entities.archers){ 
       if (a.dead) continue; 
       drawCharacter(a.x, a.y, 'archer', a);
+    }
+    for (const c of entities.cacti){ 
+      if (c.dead) continue; 
+      drawCharacter(c.x, c.y, 'cactus', c);
+    }
+    for (const w of entities.snowwolves){ 
+      if (w.dead) continue; 
+      drawCharacter(w.x, w.y, 'snowwolf', w);
+    }
+    for (const sc of entities.scorpions){ 
+      if (sc.dead) continue; 
+      drawCharacter(sc.x, sc.y, 'scorpion', sc);
+    }
+    for (const k of entities.krakens){ 
+      if (k.dead) continue; 
+      drawCharacter(k.x, k.y, 'kraken', k);
+    }
+    for (const f of entities.firespirits){ 
+      if (f.dead) continue; 
+      drawCharacter(f.x, f.y, 'firespirit', f);
     }
 
     // プレイヤー
@@ -1057,6 +2300,9 @@
       
       ctx.restore();
     }
+    
+    // ミニマップを描画
+    drawMinimap();
   }
 
   // 更新
@@ -1075,17 +2321,73 @@
     if (player.inv>0) player.inv-=dt;
     if (player.swordT>0) player.swordT-=dt;
 
-    moveWithTile(player, dt);
+    // プレイヤーの移動（画面端通過を許可）
+    moveWithTile(player, dt, true);
+
+    // マップ切り替えチェック
+    if (player.x < 0) {
+      markMapVisited(currentMapX, currentMapY); // 現在のマップを訪問済みに
+      currentMapX--;
+      player.x = W - 10;
+      arrows.length = 0; // 矢をクリア
+      hideSpeechBubble();
+      markMapVisited(currentMapX, currentMapY); // 新しいマップを訪問済みに
+      Sound.playSound('button'); // マップ切り替え音
+    } else if (player.x > W) {
+      markMapVisited(currentMapX, currentMapY);
+      currentMapX++;
+      player.x = 10;
+      arrows.length = 0;
+      hideSpeechBubble();
+      markMapVisited(currentMapX, currentMapY);
+      Sound.playSound('button');
+    }
+    if (player.y < 0) {
+      markMapVisited(currentMapX, currentMapY);
+      currentMapY--;
+      player.y = H - 10;
+      arrows.length = 0;
+      hideSpeechBubble();
+      markMapVisited(currentMapX, currentMapY);
+      Sound.playSound('button');
+    } else if (player.y > H) {
+      markMapVisited(currentMapX, currentMapY);
+      currentMapY++;
+      player.y = 10;
+      arrows.length = 0;
+      hideSpeechBubble();
+      markMapVisited(currentMapX, currentMapY);
+      Sound.playSound('button');
+    }
+    
+    // 現在のマップを訪問済みにマーク
+    markMapVisited(currentMapX, currentMapY);
 
     // コンテキスト
+    const entities = getMapEntities();
     let canTalk = false, canOpen = false;
     const near = (o,r) => dist2(player.x,player.y,o.x,o.y) < (r*r);
     
-    for (const n of npcs){ 
+    for (const n of entities.npcs){ 
       if (near(n, 20)) canTalk = true; 
     }
-    for (const c of chests){ 
+    for (const c of entities.chests){ 
       if (!c.opened && near(c, 20)) canOpen = true; 
+    }
+    
+    // リスポーン直後に老人が自動的に愚痴を言う
+    if (justRespawned && currentMapX === 0 && currentMapY === 0) {
+      const npc = entities.npcs.find(n => near(n, 50)); // 少し広めの範囲
+      if (npc && npc.deathTexts) {
+        justRespawned = false;
+        Sound.playSound('talk');
+        // ランダムに愚痴を選ぶ
+        const randomDeathText = npc.deathTexts[Math.floor(Math.random() * npc.deathTexts.length)];
+        showSpeechBubble(npc, randomDeathText);
+        // 通常の会話インデックスはリセットしない（別管理）
+      } else {
+        justRespawned = false;
+      }
     }
     
     if (canTalk) showHint('💬 Bで話す'); 
@@ -1093,20 +2395,31 @@
     
     if (Input.bDown){
       if (canTalk){ 
-        const npc = npcs.find(n => near(n, 20));
+        const npc = entities.npcs.find(n => near(n, 20));
         if (npc) {
-          Sound.playSound('talk'); 
-          showHint(npc.text);
-          if (!npc.talked) {
-            npc.talked = true;
-            state.coins += 5;
-            gainExp(1);
-            showHint('🧙‍♂️ 魔法使いから+5💰');
+          Sound.playSound('talk');
+          
+          // 吹き出しで会話を表示
+          if (npc.currentTextIndex < npc.texts.length) {
+            showSpeechBubble(npc, npc.texts[npc.currentTextIndex]);
+            npc.currentTextIndex++;
+            
+            // 初回会話時のみ報酬
+            if (!npc.talked && npc.currentTextIndex >= npc.texts.length) {
+              npc.talked = true;
+              state.coins += 5;
+              gainExp(1);
+              showHint('👴 長老から+5💰');
+            }
+          } else {
+            // 全ての会話が終わったら最初に戻す
+            npc.currentTextIndex = 0;
+            showSpeechBubble(npc, npc.texts[0]);
           }
         }
       }
       else if (canOpen){ 
-        const chest = chests.find(c=>!c.opened && near(c,20)); 
+        const chest = entities.chests.find(c=>!c.opened && near(c,20)); 
         if (chest){ 
           chest.opened = true; 
           const reward = 10 + state.level * 2;
@@ -1119,7 +2432,7 @@
     }
 
     // スライム
-    for (const s of slimes){ 
+    for (const s of entities.slimes){ 
       if (s.dead) continue; 
       s.update(dt); 
       moveWithTile(s, dt); 
@@ -1127,7 +2440,7 @@
     }
 
     // アーチャー
-    for (const a of archers){ 
+    for (const a of entities.archers){ 
       if (a.dead) continue; 
       a.update(dt);
       if ((a.cd-=dt)<=0){
@@ -1154,6 +2467,66 @@
       } 
     }
 
+    // サボテンモンスター
+    for (const c of entities.cacti){ 
+      if (c.dead) continue; 
+      c.update(dt); 
+      moveWithTile(c, dt); 
+      if (dist2(c.x,c.y,player.x,player.y) < 15*15) hitPlayer(1); 
+    }
+
+    // 雪オオカミ
+    for (const w of entities.snowwolves){ 
+      if (w.dead) continue; 
+      w.update(dt); 
+      moveWithTile(w, dt); 
+      if (dist2(w.x,w.y,player.x,player.y) < 15*15) hitPlayer(1); 
+    }
+
+    // サソリ
+    for (const sc of entities.scorpions){ 
+      if (sc.dead) continue; 
+      sc.update(dt); 
+      moveWithTile(sc, dt); 
+      if (dist2(sc.x,sc.y,player.x,player.y) < 15*15) hitPlayer(2); 
+    }
+
+    // クラーケン
+    for (const k of entities.krakens){ 
+      if (k.dead) continue; 
+      k.update(dt);
+      if ((k.cd-=dt)<=0){
+        const playerDist = Math.hypot(k.x - player.x, k.y - player.y);
+        if (playerDist < k.range) {
+          if (Math.abs(k.y-player.y)<12 && hasLineOfSight(k.x,k.y,player.x,player.y)) { 
+            const vx = Math.sign(player.x-k.x)*100; 
+            arrows.push(new Arrow(k.x, k.y, vx, 0)); 
+            k.cd=2.0; 
+            k.alertT = 0.5;
+            Sound.playSound('button');
+          } 
+          else if (Math.abs(k.x-player.x)<12 && hasLineOfSight(k.x,k.y,player.x,player.y)) { 
+            const vy = Math.sign(player.y-k.y)*100; 
+            arrows.push(new Arrow(k.x, k.y, 0, vy)); 
+            k.cd=2.0; 
+            k.alertT = 0.5;
+            Sound.playSound('button');
+          } 
+          else k.cd=0.5;
+        } else {
+          k.cd = 0.4;
+        }
+      } 
+    }
+
+    // 炎の精霊
+    for (const f of entities.firespirits){ 
+      if (f.dead) continue; 
+      f.update(dt); 
+      moveWithTile(f, dt); 
+      if (dist2(f.x,f.y,player.x,player.y) < 15*15) hitPlayer(1); 
+    }
+
     // 矢
     for (const ar of arrows){ 
       ar.x += ar.vx*dt; 
@@ -1176,7 +2549,8 @@
         Sound.playSound('bomb');
         
         const hitRect = (e) => Math.abs(e.x-b.x)<TS*1.5 && Math.abs(e.y-b.y)<8 || Math.abs(e.y-b.y)<TS*1.5 && Math.abs(e.x-b.x)<8;
-        for (const s of slimes){ 
+        const bombEntities = getMapEntities();
+        for (const s of bombEntities.slimes){ 
           if (!s.dead && hitRect(s)){ 
             s.dead=true; 
             state.coins+=3; 
@@ -1184,12 +2558,52 @@
             showHint('💥 爆弾でスライム撃破!'); 
           } 
         }
-        for (const a of archers){ 
+        for (const a of bombEntities.archers){ 
           if (!a.dead && hitRect(a)){ 
             a.dead=true; 
             state.coins+=5; 
             gainExp(3);
             showHint('💥 爆弾でアーチャー撃破!'); 
+          } 
+        }
+        for (const c of bombEntities.cacti){ 
+          if (!c.dead && hitRect(c)){ 
+            c.dead=true; 
+            state.coins+=4; 
+            gainExp(2);
+            showHint('💥 爆弾でサボテンモンスター撃破!'); 
+          } 
+        }
+        for (const w of bombEntities.snowwolves){ 
+          if (!w.dead && hitRect(w)){ 
+            w.dead=true; 
+            state.coins+=4; 
+            gainExp(3);
+            showHint('💥 爆弾で雪オオカミ撃破!'); 
+          } 
+        }
+        for (const sc of bombEntities.scorpions){ 
+          if (!sc.dead && hitRect(sc)){ 
+            sc.dead=true; 
+            state.coins+=5; 
+            gainExp(3);
+            showHint('💥 爆弾でサソリ撃破!'); 
+          } 
+        }
+        for (const k of bombEntities.krakens){ 
+          if (!k.dead && hitRect(k)){ 
+            k.dead=true; 
+            state.coins+=6; 
+            gainExp(4);
+            showHint('💥 爆弾でクラーケン撃破!'); 
+          } 
+        }
+        for (const f of bombEntities.firespirits){ 
+          if (!f.dead && hitRect(f)){ 
+            f.dead=true; 
+            state.coins+=4; 
+            gainExp(2);
+            showHint('💥 爆弾で炎の精霊撃破!'); 
           } 
         }
         if (hitRect(player)) hitPlayer(2);
@@ -1217,6 +2631,14 @@
     if (state.hintTimer > 0) {
       state.hintTimer -= dt;
       if (state.hintTimer <= 0) hintEl.classList.remove('show');
+    }
+    
+    // 吹き出しのタイマー更新
+    if (speechBubbleTimer > 0) {
+      speechBubbleTimer -= dt;
+      if (speechBubbleTimer <= 0) {
+        hideSpeechBubble();
+      }
     }
   }
 
@@ -1303,7 +2725,9 @@
   btnClose.addEventListener('click', ()=> { togglePause(); Sound.playSound('button'); });
 
   // 初期化
+  markMapVisited(currentMapX, currentMapY); // 初期マップを訪問済みに
   renderHUD();
+  drawMinimap(); // 初期ミニマップを描画
   showHint('🎮 移動してみよう', 3);
 
 })();
