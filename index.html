@@ -326,12 +326,13 @@
 
     .minimap-landscape {
       display: block !important;
-      position: relative;
-      top: auto;
-      left: auto;
-      width: 100px;
-      height: 100px;
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      width: 120px;
+      height: 120px;
       margin: 0;
+      pointer-events: auto;
     }
 
     .hud-right {
@@ -341,15 +342,22 @@
     .hud-left {
       display: flex !important;
       flex-direction: column;
-      align-items: flex-start;
+      align-items: flex-end;
       gap: 8px;
-      margin: 12px;
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      margin: 0;
       pointer-events: none;
     }
 
-    .hearts-landscape,
+    .hearts-landscape {
+      display: flex !important;
+    }
+
     .stats-landscape {
       display: flex !important;
+      align-items: flex-end !important;
     }
 
     .hud-left > * {
@@ -464,7 +472,7 @@
           </button>
           <button class="btn b" id="btnB" title="アクション（宝箱・会話）">
             <div style="position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-              <div style="font-size: 20px;">💬</div>
+              <div style="font-size: 20px;">🎁/💬</div>
               <div style="font-size: 9px; color: rgba(255,255,255,0.7); margin-top: 2px;">Z</div>
             </div>
           </button>
@@ -851,8 +859,8 @@
       case 'cactus': // 北東方向：サボテン、陽気な世界
         // ボスフィールド判定（北東の四隅）
         const isBossFieldNE = (mapX === 3 && mapY === -3);
-        // サボテンを多く配置（ボスフィールドは少なめ）
-        for(let i = 0; i < (isBossFieldNE ? 10 : 40); i++){
+        // サボテンを多く配置（ボスフィールドは少なめ：70%減らす）
+        for(let i = 0; i < (isBossFieldNE ? 3 : 40); i++){
           const x = Math.floor(Math.random() * COLS);
           const y = Math.floor(Math.random() * ROWS);
           if (map[y] && map[y][x] === T.GRASS) {
@@ -867,8 +875,8 @@
             }
           }
         }
-        // 花を少し（明るい雰囲気、ボスフィールドは少なめ）
-        for(let i = 0; i < (isBossFieldNE ? 5 : 20); i++){
+        // 花を少し（明るい雰囲気、ボスフィールドは少なめ：70%減らす）
+        for(let i = 0; i < (isBossFieldNE ? 2 : 20); i++){
           const x = Math.floor(Math.random() * COLS);
           const y = Math.floor(Math.random() * ROWS);
           if (map[y] && map[y][x] === T.GRASS) {
@@ -888,16 +896,16 @@
         }
         // ボスフィールド判定（北西の四隅）
         const isBossFieldNW = (mapX === -3 && mapY === -3);
-        // 山（岩）を配置（ボスフィールドは少なめ）
-        for(let i = 0; i < (isBossFieldNW ? 8 : 30); i++){
+        // 山（岩）を配置（ボスフィールドは少なめ：70%減らす）
+        for(let i = 0; i < (isBossFieldNW ? 2 : 30); i++){
           const x = Math.floor(Math.random() * COLS);
           const y = Math.floor(Math.random() * ROWS);
           if (map[y] && map[y][x] === T.SNOW) {
             map[y][x] = T.ROCK;
           }
         }
-        // 森（木）を配置（ボスフィールドは少なめ）
-        for(let i = 0; i < (isBossFieldNW ? 5 : 25); i++){
+        // 森（木）を配置（ボスフィールドは少なめ：70%減らす）
+        for(let i = 0; i < (isBossFieldNW ? 2 : 25); i++){
           const x = Math.floor(Math.random() * COLS);
           const y = Math.floor(Math.random() * ROWS);
           if (map[y] && map[y][x] === T.SNOW) {
@@ -925,16 +933,16 @@
         }
         // ボスフィールド判定（南西の四隅）
         const isBossFieldSW = (mapX === -3 && mapY === 3);
-        // 洞窟（岩）を配置（ボスフィールドは少なめ）
-        for(let i = 0; i < (isBossFieldSW ? 8 : 35); i++){
+        // 洞窟（岩）を配置（ボスフィールドは少なめ：70%減らす）
+        for(let i = 0; i < (isBossFieldSW ? 2 : 35); i++){
           const x = Math.floor(Math.random() * COLS);
           const y = Math.floor(Math.random() * ROWS);
           if (map[y] && map[y][x] === T.DESERT) {
             map[y][x] = T.ROCK;
           }
         }
-        // サボテンを少し（ボスフィールドは少なめ）
-        for(let i = 0; i < (isBossFieldSW ? 3 : 15); i++){
+        // サボテンを少し（ボスフィールドは少なめ：70%減らす）
+        for(let i = 0; i < (isBossFieldSW ? 1 : 15); i++){
           const x = Math.floor(Math.random() * COLS);
           const y = Math.floor(Math.random() * ROWS);
           if (map[y] && map[y][x] === T.DESERT) {
@@ -962,8 +970,8 @@
         }
         // ボスフィールド判定（南東の四隅）
         const isBossFieldSE = (mapX === 3 && mapY === 3);
-        // 島（草）を配置（ボスフィールドは少なめ）
-        for(let i = 0; i < (isBossFieldSE ? 2 : 8); i++){
+        // 島（草）を配置（ボスフィールドは少なめ：70%減らす）
+        for(let i = 0; i < (isBossFieldSE ? 1 : 8); i++){
           const islandX = Math.floor(Math.random() * (COLS - 6)) + 3;
           const islandY = Math.floor(Math.random() * (ROWS - 6)) + 3;
           for(let y = islandY - 2; y < islandY + 3 && y < ROWS; y++) {
@@ -974,8 +982,8 @@
             }
           }
         }
-        // 島に木を配置（ボスフィールドは少なめ）
-        for(let i = 0; i < (isBossFieldSE ? 3 : 15); i++){
+        // 島に木を配置（ボスフィールドは少なめ：70%減らす）
+        for(let i = 0; i < (isBossFieldSE ? 1 : 15); i++){
           const x = Math.floor(Math.random() * COLS);
           const y = Math.floor(Math.random() * ROWS);
           if (map[y] && map[y][x] === T.GRASS) {
@@ -999,6 +1007,9 @@
   // マップ管理システム
   const maps = new Map();
   let currentMapX = 0, currentMapY = 0;
+  // マップの境界定義（-4から4の範囲）
+  const MIN_MAP_X = -4, MAX_MAP_X = 4;
+  const MIN_MAP_Y = -4, MAX_MAP_Y = 4;
   const visitedMaps = new Set(); // 訪問したマップを記録
   
   function getMapKey(x, y) {
@@ -1714,22 +1725,22 @@
       // ボスタイプごとの設定
       switch(type) {
         case 'suzaku': // 朱雀（南）- 円形に動き回る
-          this.color = '#ff0000';
+          this.color = '#ff0000'; // 赤
           this.attackSpeed = 1.5;
           this.movePattern = 'circle';
           break;
         case 'genbu': // 玄武（北）- 前後に動く
-          this.color = '#000080';
+          this.color = '#ff0000'; // 赤に変更
           this.attackSpeed = 2.0;
           this.movePattern = 'backforth';
           break;
         case 'seiryu': // 青龍（東）- 左右に動く
-          this.color = '#00ffff';
+          this.color = '#ff0000'; // 赤に変更
           this.attackSpeed = 1.0;
           this.movePattern = 'sideways';
           break;
         case 'kirin': // 麒麟（西）- プレイヤーを追いかける
-          this.color = '#ffd700';
+          this.color = '#ff0000'; // 赤に変更
           this.attackSpeed = 1.8;
           this.movePattern = 'chase';
           break;
@@ -3105,12 +3116,22 @@
     
     // 宝箱
     for (const c of entities.chests){ 
-      const chestColor = c.opened? '#8e6b3f' : '#d4af37';
+      // ボスフィールドの判定（四隅の座標）
+      const isBossField = (currentMapX === 3 && currentMapY === -3) || // 北東（青龍）
+                          (currentMapX === -3 && currentMapY === -3) || // 北西（玄武）
+                          (currentMapX === -3 && currentMapY === 3) ||  // 南西（麒麟）
+                          (currentMapX === 3 && currentMapY === 3);     // 南東（朱雀）
+      // ボスフィールドの宝箱は赤色
+      const chestColor = isBossField 
+        ? (c.opened ? '#8e6b3f' : '#ff0000')
+        : (c.opened ? '#8e6b3f' : '#d4af37');
       ctx.fillStyle = chestColor;
       ctx.fillRect(c.x-8,c.y-6,16,12);
       
       if (!c.opened) {
-        ctx.fillStyle = '#ffd700';
+        // ボスフィールドの宝箱のハイライトも赤系に
+        const highlightColor = isBossField ? '#ff4444' : '#ffd700';
+        ctx.fillStyle = highlightColor;
         ctx.fillRect(c.x-6, c.y-4, 12, 2);
         ctx.fillRect(c.x-2, c.y-2, 4, 4);
         const sparkleTime = performance.now() * 0.01;
@@ -3688,44 +3709,76 @@
 
     // マップ切り替えチェック
     if (player.x < 0) {
-      markMapVisited(currentMapX, currentMapY); // 現在のマップを訪問済みに
-      currentMapX--;
-      player.x = W - 10;
-      arrows.length = 0; // 矢をクリア
-      shurikens.length = 0; // 手裏剣をクリア
-      spears.length = 0; // 長槍をクリア
-      rockets.length = 0; // ロケットをクリア
-      fragments.length = 0; // 破片をクリア
-      // 爆弾はマップごとに管理されているので、マップ切り替え時はクリアしない
-      blasts.length = 0; // 爆発をクリア
-      hideSpeechBubble();
-      markMapVisited(currentMapX, currentMapY); // 新しいマップを訪問済みに
-      Sound.playSound('button'); // マップ切り替え音
+      // 左端：境界チェック
+      if (currentMapX > MIN_MAP_X) {
+        markMapVisited(currentMapX, currentMapY); // 現在のマップを訪問済みに
+        currentMapX--;
+        player.x = W - 10;
+        arrows.length = 0; // 矢をクリア
+        shurikens.length = 0; // 手裏剣をクリア
+        spears.length = 0; // 長槍をクリア
+        rockets.length = 0; // ロケットをクリア
+        fragments.length = 0; // 破片をクリア
+        // 爆弾はマップごとに管理されているので、マップ切り替え時はクリアしない
+        blasts.length = 0; // 爆発をクリア
+        hideSpeechBubble();
+        markMapVisited(currentMapX, currentMapY); // 新しいマップを訪問済みに
+        Sound.playSound('button'); // マップ切り替え音
+      } else {
+        // 境界を越えられない
+        player.x = 0;
+        showHint('通れません。', 2.0);
+        Sound.playSound('button');
+      }
     } else if (player.x > W) {
-      markMapVisited(currentMapX, currentMapY);
-      currentMapX++;
-      player.x = 10;
-      arrows.length = 0;
-      hideSpeechBubble();
-      markMapVisited(currentMapX, currentMapY);
-      Sound.playSound('button');
+      // 右端：境界チェック
+      if (currentMapX < MAX_MAP_X) {
+        markMapVisited(currentMapX, currentMapY);
+        currentMapX++;
+        player.x = 10;
+        arrows.length = 0;
+        hideSpeechBubble();
+        markMapVisited(currentMapX, currentMapY);
+        Sound.playSound('button');
+      } else {
+        // 境界を越えられない
+        player.x = W;
+        showHint('通れません。', 2.0);
+        Sound.playSound('button');
+      }
     }
     if (player.y < 0) {
-      markMapVisited(currentMapX, currentMapY);
-      currentMapY--;
-      player.y = H - 10;
-      arrows.length = 0;
-      hideSpeechBubble();
-      markMapVisited(currentMapX, currentMapY);
-      Sound.playSound('button');
+      // 上端：境界チェック
+      if (currentMapY > MIN_MAP_Y) {
+        markMapVisited(currentMapX, currentMapY);
+        currentMapY--;
+        player.y = H - 10;
+        arrows.length = 0;
+        hideSpeechBubble();
+        markMapVisited(currentMapX, currentMapY);
+        Sound.playSound('button');
+      } else {
+        // 境界を越えられない
+        player.y = 0;
+        showHint('通れません。', 2.0);
+        Sound.playSound('button');
+      }
     } else if (player.y > H) {
-      markMapVisited(currentMapX, currentMapY);
-      currentMapY++;
-      player.y = 10;
-      arrows.length = 0;
-      hideSpeechBubble();
-      markMapVisited(currentMapX, currentMapY);
-      Sound.playSound('button');
+      // 下端：境界チェック
+      if (currentMapY < MAX_MAP_Y) {
+        markMapVisited(currentMapX, currentMapY);
+        currentMapY++;
+        player.y = 10;
+        arrows.length = 0;
+        hideSpeechBubble();
+        markMapVisited(currentMapX, currentMapY);
+        Sound.playSound('button');
+      } else {
+        // 境界を越えられない
+        player.y = H;
+        showHint('通れません。', 2.0);
+        Sound.playSound('button');
+      }
     }
     
     // 現在のマップを訪問済みにマーク
