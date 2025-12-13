@@ -27,7 +27,8 @@
     background: radial-gradient(1200px 800px at 50% 10%, #141720, #0b0c10 60%);
     overflow: hidden;
     -webkit-user-select: none; user-select: none;
-    touch-action: none;
+    touch-action: manipulation; /* iOSのダブルタップズームを無効化 */
+    -webkit-touch-callout: none; /* iOSの長押しメニューを無効化 */
   }
 
   #root {
@@ -174,7 +175,7 @@
 
   .buttons { 
     position:absolute; right: 10px; bottom: 10px; 
-    display:grid; grid-template-areas: ". x" "b a"; 
+    display:flex; flex-direction: column;
     gap: 12px; pointer-events:auto; 
   }
   
@@ -192,9 +193,9 @@
     transform: scale(0.92); 
     box-shadow: 0 2px 6px rgba(0,0,0,0.4);
   }
-  .btn.a { grid-area: a; background: linear-gradient(135deg, #ff6b6b, #e74c3c); color: white; }
-  .btn.b { grid-area: b; background: linear-gradient(135deg, #4ecdc4, #45b7b8); color: white; }
-  .btn.x { grid-area: x; background: linear-gradient(135deg, #f39c12, #e67e22); color: white; }
+  .btn.a { background: linear-gradient(135deg, #ff6b6b, #e74c3c); color: white; }
+  .btn.b { background: linear-gradient(135deg, #4ecdc4, #45b7b8); color: white; }
+  .btn.x { background: linear-gradient(135deg, #f39c12, #e67e22); color: white; }
 
   dialog { border: none; padding: 0; background: transparent; }
   .sheet { 
@@ -378,7 +379,8 @@
       right: auto;
       bottom: auto;
       margin: 12px;
-      grid-template-areas: "a" "b" "x";
+      display: flex;
+      flex-direction: column;
       gap: 16px;
       pointer-events: auto;
     }
@@ -460,10 +462,10 @@
               <div style="font-size: 9px; color: rgba(255,255,255,0.7); margin-top: 2px;">J/SP</div>
             </div>
           </button>
-          <button class="btn b" id="btnB" title="アクション">
+          <button class="btn b" id="btnB" title="アクション（宝箱・会話）">
             <div style="position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
               <div style="font-size: 20px;">💬</div>
-              <div style="font-size: 9px; color: rgba(255,255,255,0.7); margin-top: 2px;">K/Z</div>
+              <div style="font-size: 9px; color: rgba(255,255,255,0.7); margin-top: 2px;">Z</div>
             </div>
           </button>
           <button class="btn x" id="btnX" title="武器使用">
@@ -1115,6 +1117,23 @@
     window.removeEventListener('pointerdown', unlockAudio);
   };
   window.addEventListener('pointerdown', unlockAudio);
+
+  // iOSのダブルタップズーム防止（double-tap zoom prevention）
+  let lastTouchEnd = 0;
+  document.addEventListener('touchend', (e) => {
+    const now = Date.now();
+    if (now - lastTouchEnd < 300) {
+      e.preventDefault();
+    }
+    lastTouchEnd = now;
+  }, { passive: false });
+  
+  // ダブルタップ防止の追加対策
+  document.addEventListener('touchstart', (e) => {
+    if (e.touches.length > 1) {
+      e.preventDefault();
+    }
+  }, { passive: false });
 
   // 入力
   const Input = {
@@ -1973,8 +1992,9 @@
   }
 
   class Bomb {
-    constructor(x,y) {
+    constructor(x,y,mapX,mapY) {
       this.x=x; this.y=y; this.t=5.0; this.exploded=false; // 5秒後に爆発
+      this.mapX=mapX; this.mapY=mapY; // マップ座標を保存
     }
   }
 
@@ -2050,10 +2070,10 @@
             // ボスアイテムを獲得したら褒める
             if (state.bossItems.length > 0) {
               const items = state.bossItems;
-              if (items.includes('村長の杖')) base.push('おお、村長の杖を！\nよくやった！歩きづらかったのじゃ');
-              if (items.includes('村長のメガネ')) base.push('村長のメガネも！\n素晴らしい！おお、そんな顔をしておったのか');
-              if (items.includes('村長の証明書')) base.push('村長の証明書まで！\n助かった！どこに行ったかと思っておった');
-              if (items.includes('村長のハンカチ')) base.push('村長のハンカチも！\n完璧だ！大人のたしなみじゃのお');
+              if (items.includes('村長の杖')) base.push('おお、村長の杖を！\nよくやった！');
+              if (items.includes('村長のメガネ')) base.push('村長のメガネも！\n素晴らしい！');
+              if (items.includes('村長の証明書')) base.push('村長の証明書まで！\n立派だ！');
+              if (items.includes('村長のハンカチ')) base.push('村長のハンカチも！\n完璧だ！');
             }
             
             return base;
@@ -2449,8 +2469,10 @@
     
     switch(state.currentWeapon) {
       case 'bomb':
-        if (bombs.length >= 3) return;
-        bombs.push(new Bomb(Math.round(player.x/TS)*TS, Math.round(player.y/TS)*TS));
+        // 現在のマップの爆弾のみをカウント
+        const currentBombs = bombs.filter(b => b.mapX === currentMapX && b.mapY === currentMapY);
+        if (currentBombs.length >= 3) return;
+        bombs.push(new Bomb(Math.round(player.x/TS)*TS, Math.round(player.y/TS)*TS, currentMapX, currentMapY));
         Sound.playSound('button');
         showHint('💣 爆弾設置');
         cooldown = 0.3; // 爆弾は少し長め
@@ -3111,8 +3133,9 @@
       }
     }
 
-    // 爆弾
+    // 爆弾（現在のマップの爆弾のみ描画）
     for (const b of bombs){ 
+      if (b.mapX !== currentMapX || b.mapY !== currentMapY) continue; // 現在のマップの爆弾のみ
       const pulseTime = performance.now() * 0.01;
       const bombColor = b.t < 0.3 ? '#ff0000' : '#333';
       ctx.fillStyle = bombColor;
@@ -3673,7 +3696,7 @@
       spears.length = 0; // 長槍をクリア
       rockets.length = 0; // ロケットをクリア
       fragments.length = 0; // 破片をクリア
-      bombs.length = 0; // 爆弾をクリア
+      // 爆弾はマップごとに管理されているので、マップ切り替え時はクリアしない
       blasts.length = 0; // 爆発をクリア
       hideSpeechBubble();
       markMapVisited(currentMapX, currentMapY); // 新しいマップを訪問済みに
@@ -3735,38 +3758,11 @@
       }
     }
     
-    if (canTalk) showHint('💬 Xで話す'); 
-    else if (canOpen) showHint('📦 Xで開ける');
+    if (canTalk) showHint('💬 Zで話す'); 
+    else if (canOpen) showHint('📦 Zで開ける');
     
-    if (Input.bDown){
-      if (canTalk){ 
-        const npc = entities.npcs.find(n => near(n, 20));
-        if (npc) {
-          Sound.playSound('talk');
-          
-          // 吹き出しで会話を表示
-          if (npc.currentTextIndex < npc.texts.length) {
-            showSpeechBubble(npc, npc.texts[npc.currentTextIndex]);
-            npc.currentTextIndex++;
-            
-            // 初回会話時のみ報酬
-            if (!npc.talked && npc.currentTextIndex >= npc.texts.length) {
-              npc.talked = true;
-              state.coins += 5;
-              gainExp(1);
-              showHint('👴 長老から+5💰');
-            }
-          } else {
-            // 全ての会話が終わったら最初に戻す
-            npc.currentTextIndex = 0;
-            showSpeechBubble(npc, npc.texts[0]);
-          }
-        }
-      }
-    }
-    
-    // Xボタンの処理（宝箱を開く処理を優先、なければ武器使用）
-    if (Input.xDown) {
+    // Zボタン（B）の処理：宝箱を開く処理を優先、なければ会話
+    if (Input.bDown) {
       // ポーズ中でないことを確認
       if (!state.paused && !state.ending) {
         if (canOpen) {
@@ -3790,10 +3786,39 @@
               showHint(`📦 宝箱から+${reward}💰`);
             }
           }
-        } else {
-          // 宝箱がない場合は武器使用
-          useWeapon();
+        } else if (canTalk) {
+          // 会話処理
+          const npc = entities.npcs.find(n => near(n, 20));
+          if (npc) {
+            Sound.playSound('talk');
+            
+            // 吹き出しで会話を表示
+            if (npc.currentTextIndex < npc.texts.length) {
+              showSpeechBubble(npc, npc.texts[npc.currentTextIndex]);
+              npc.currentTextIndex++;
+              
+              // 初回会話時のみ報酬
+              if (!npc.talked && npc.currentTextIndex >= npc.texts.length) {
+                npc.talked = true;
+                state.coins += 5;
+                gainExp(1);
+                showHint('👴 長老から+5💰');
+              }
+            } else {
+              // 全ての会話が終わったら最初に戻す
+              npc.currentTextIndex = 0;
+              showSpeechBubble(npc, npc.texts[0]);
+            }
+          }
         }
+      }
+    }
+    
+    // Xボタンの処理：武器使用のみ
+    if (Input.xDown) {
+      // ポーズ中でないことを確認
+      if (!state.paused && !state.ending) {
+        useWeapon();
       }
     }
 
@@ -4346,8 +4371,9 @@
       }
     }
 
-    // 爆弾
+    // 爆弾（現在のマップの爆弾のみ更新）
     for (const b of bombs){ 
+      if (b.mapX !== currentMapX || b.mapY !== currentMapY) continue; // 現在のマップの爆弾のみ
       b.t-=dt; 
       if (!b.exploded && b.t<=0){ 
         b.exploded = true; 
@@ -4449,9 +4475,11 @@
       } 
     }
     
-    // 後片付け
+    // 後片付け（現在のマップの爆弾のみ）
     for (let i=bombs.length-1;i>=0;i--){ 
-      if (bombs[i].exploded && bombs[i].t<=-0.3) bombs.splice(i,1); 
+      if (bombs[i].mapX === currentMapX && bombs[i].mapY === currentMapY && bombs[i].exploded && bombs[i].t<=-0.3) {
+        bombs.splice(i,1); 
+      }
     }
     for (const ex of blasts){ ex.t-=dt; }
     for (let i=arrows.length-1;i>=0;i--) if (arrows[i].dead) arrows.splice(i,1);
@@ -4465,7 +4493,7 @@
     tutorialTick(dt, { 
       moved: (Math.abs(Input.ax)+Math.abs(Input.ay))>0.5, 
       attacked: Input.aDown, 
-      opened: (Input.xDown && canOpen), 
+      opened: (Input.bDown && canOpen), 
       talked: (Input.bDown && canTalk)
     });
 
