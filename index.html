@@ -74,6 +74,16 @@
     align-items: flex-end;
   }
 
+  .hud-left {
+    display: none; /* 縦画面時は非表示 */
+  }
+
+  .minimap-landscape,
+  .hearts-landscape,
+  .stats-landscape {
+    display: none; /* 縦画面時は非表示 */
+  }
+
   .hearts { 
     display:flex; 
     gap:4px; 
@@ -280,6 +290,117 @@
     height: 100%;
     image-rendering: pixelated;
   }
+
+  /* 横画面時のレイアウト */
+  @media (orientation: landscape) and (max-height: 600px) {
+    .stage {
+      width: 100vw;
+      height: 100vh;
+      border-radius: 0;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #game {
+      flex: 1;
+      max-width: calc(100vw - 400px);
+      height: 100%;
+    }
+
+    .hud {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      pointer-events: none;
+    }
+
+    .minimap {
+      display: none; /* 横画面時は非表示 */
+    }
+
+    .minimap-landscape {
+      display: block !important;
+      position: relative;
+      top: auto;
+      left: auto;
+      width: 100px;
+      height: 100px;
+      margin: 0;
+    }
+
+    .hud-right {
+      display: none; /* 横画面時は非表示 */
+    }
+
+    .hud-left {
+      display: flex !important;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+      margin: 12px;
+      pointer-events: none;
+    }
+
+    .hearts-landscape,
+    .stats-landscape {
+      display: flex !important;
+    }
+
+    .hud-left > * {
+      pointer-events: auto;
+    }
+
+    .virtual {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      pointer-events: none;
+    }
+
+    .stick {
+      position: relative;
+      left: auto;
+      bottom: auto;
+      margin: 12px;
+      pointer-events: auto;
+    }
+
+    .buttons {
+      position: relative;
+      right: auto;
+      bottom: auto;
+      margin: 12px;
+      grid-template-areas: "a" "b" "x";
+      gap: 16px;
+      pointer-events: auto;
+    }
+
+    .hint {
+      left: 50%;
+      bottom: auto;
+      top: 50%;
+      transform: translate(-50%, -50%);
+    }
+  }
+
+  /* ボタンの打感アニメーション */
+  @keyframes buttonPress {
+    0% { transform: scale(1); }
+    50% { transform: scale(0.85); }
+    100% { transform: scale(0.92); }
+  }
+
+  .btn.pressed {
+    animation: buttonPress 0.15s ease-out;
+  }
 </style>
 </head>
 <body>
@@ -290,6 +411,23 @@
       <div class="hud">
         <div class="minimap">
           <canvas id="minimap" width="150" height="150"></canvas>
+        </div>
+        <div class="hud-left">
+          <div class="minimap minimap-landscape">
+            <canvas id="minimap-landscape" width="150" height="150"></canvas>
+          </div>
+          <div class="hearts hearts-landscape" id="hearts-landscape"></div>
+          <div class="stats-landscape" style="display:flex; flex-direction:column; gap:8px; align-items:flex-start;">
+            <div class="counter">
+              <div class="coin"></div>
+              <span id="coins-landscape">0</span>
+            </div>
+            <div class="counter" style="background: linear-gradient(135deg, var(--panel), rgba(139,211,255,0.1));">
+              <span style="color: var(--accent); font-weight: 800;">Lv</span>
+              <span id="level-landscape">1</span>
+            </div>
+            <button class="btn-ghost" id="btnPause-landscape" title="持ち物" style="font-size: 2em; line-height: 1; padding: 8px 12px;">🎒</button>
+          </div>
         </div>
         <div class="hud-right">
           <div class="hearts" id="hearts"></div>
@@ -302,7 +440,7 @@
               <span style="color: var(--accent); font-weight: 800;">Lv</span>
               <span id="level">1</span>
             </div>
-            <button class="btn-ghost" id="btnPause">⚙️</button>
+            <button class="btn-ghost" id="btnPause" title="持ち物" style="font-size: 2em; line-height: 1; padding: 8px 12px;">🎒</button>
           </div>
         </div>
         <div class="hint" id="hint">🎮 移動してみよう</div>
@@ -316,9 +454,24 @@
           <div class="knob" id="stickKnob"></div>
         </div>
         <div class="buttons">
-          <button class="btn a" id="btnA">⚔️</button>
-          <button class="btn b" id="btnB">💬</button>
-          <button class="btn x" id="btnX">💣</button>
+          <button class="btn a" id="btnA" title="攻撃">
+            <div style="position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+              <div style="font-size: 20px;">⚔️</div>
+              <div style="font-size: 9px; color: rgba(255,255,255,0.7); margin-top: 2px;">J/SP</div>
+            </div>
+          </button>
+          <button class="btn b" id="btnB" title="アクション">
+            <div style="position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+              <div style="font-size: 20px;">💬</div>
+              <div style="font-size: 9px; color: rgba(255,255,255,0.7); margin-top: 2px;">K/Z</div>
+            </div>
+          </button>
+          <button class="btn x" id="btnX" title="武器使用">
+            <div style="position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+              <div id="weaponIcon" style="font-size: 20px;">💣</div>
+              <div style="font-size: 9px; color: rgba(255,255,255,0.7); margin-top: 2px;">X</div>
+            </div>
+          </button>
         </div>
       </div>
 
@@ -335,14 +488,39 @@
         </div>
       </dialog>
 
-      <dialog id="pause">
+      <dialog id="weaponSelect">
         <div class="sheet">
-          <header>⚙️ 設定</header>
-          <div class="content">
-            <p style="margin: 0;">⚔️ = 攻撃 / 💬 = アクション / 💣 = 爆弾</p>
+          <header>🎒 持ち物</header>
+          <div class="content" id="weaponList">
+            <!-- 武器リストはJavaScriptで動的に生成 -->
           </div>
           <div class="actions">
-            <button class="btn-ghost" id="btnClose">閉じる</button>
+            <button class="btn-ghost" id="btnCloseWeapon">閉じる</button>
+          </div>
+        </div>
+      </dialog>
+
+      <dialog id="chiefEvent">
+        <div class="sheet">
+          <header>👴 村長からの相談</header>
+          <div class="content" id="chiefEventContent">
+            <!-- 内容はJavaScriptで動的に生成 -->
+          </div>
+          <div class="actions">
+            <button class="btn-ghost" id="btnChiefYes">はい</button>
+            <button class="btn-ghost" id="btnChiefNo">いいえ</button>
+          </div>
+        </div>
+      </dialog>
+
+      <dialog id="ending">
+        <div class="sheet">
+          <header>🎉 エンディング</header>
+          <div class="content" id="endingContent">
+            <!-- 内容はJavaScriptで動的に生成 -->
+          </div>
+          <div class="actions">
+            <button class="btn-ghost" id="btnEndingClose">閉じる</button>
           </div>
         </div>
       </dialog>
@@ -369,7 +547,7 @@
   const T = { GRASS:0, TREE:1, WATER:2, TALL:3, PATH:4, FLOWER:5, ROCK:6, SAND:7, CACTUS:8, SNOW:9, DESERT:10, ICE:11 };
 
   // マップ生成関数
-  function generateMap(type) {
+  function generateMap(type, mapX = 0, mapY = 0) {
     const map = [];
     for(let y = 0; y < ROWS; y++) {
       map[y] = [];
@@ -669,8 +847,10 @@
         break;
 
       case 'cactus': // 北東方向：サボテン、陽気な世界
-        // サボテンを多く配置
-        for(let i = 0; i < 40; i++){
+        // ボスフィールド判定（北東の四隅）
+        const isBossFieldNE = (mapX === 3 && mapY === -3);
+        // サボテンを多く配置（ボスフィールドは少なめ）
+        for(let i = 0; i < (isBossFieldNE ? 10 : 40); i++){
           const x = Math.floor(Math.random() * COLS);
           const y = Math.floor(Math.random() * ROWS);
           if (map[y] && map[y][x] === T.GRASS) {
@@ -685,8 +865,8 @@
             }
           }
         }
-        // 花を少し（明るい雰囲気）
-        for(let i = 0; i < 20; i++){
+        // 花を少し（明るい雰囲気、ボスフィールドは少なめ）
+        for(let i = 0; i < (isBossFieldNE ? 5 : 20); i++){
           const x = Math.floor(Math.random() * COLS);
           const y = Math.floor(Math.random() * ROWS);
           if (map[y] && map[y][x] === T.GRASS) {
@@ -704,16 +884,18 @@
             }
           }
         }
-        // 山（岩）を配置
-        for(let i = 0; i < 30; i++){
+        // ボスフィールド判定（北西の四隅）
+        const isBossFieldNW = (mapX === -3 && mapY === -3);
+        // 山（岩）を配置（ボスフィールドは少なめ）
+        for(let i = 0; i < (isBossFieldNW ? 8 : 30); i++){
           const x = Math.floor(Math.random() * COLS);
           const y = Math.floor(Math.random() * ROWS);
           if (map[y] && map[y][x] === T.SNOW) {
             map[y][x] = T.ROCK;
           }
         }
-        // 森（木）を配置
-        for(let i = 0; i < 25; i++){
+        // 森（木）を配置（ボスフィールドは少なめ）
+        for(let i = 0; i < (isBossFieldNW ? 5 : 25); i++){
           const x = Math.floor(Math.random() * COLS);
           const y = Math.floor(Math.random() * ROWS);
           if (map[y] && map[y][x] === T.SNOW) {
@@ -739,16 +921,18 @@
             }
           }
         }
-        // 洞窟（岩）を配置
-        for(let i = 0; i < 35; i++){
+        // ボスフィールド判定（南西の四隅）
+        const isBossFieldSW = (mapX === -3 && mapY === 3);
+        // 洞窟（岩）を配置（ボスフィールドは少なめ）
+        for(let i = 0; i < (isBossFieldSW ? 8 : 35); i++){
           const x = Math.floor(Math.random() * COLS);
           const y = Math.floor(Math.random() * ROWS);
           if (map[y] && map[y][x] === T.DESERT) {
             map[y][x] = T.ROCK;
           }
         }
-        // サボテンを少し
-        for(let i = 0; i < 15; i++){
+        // サボテンを少し（ボスフィールドは少なめ）
+        for(let i = 0; i < (isBossFieldSW ? 3 : 15); i++){
           const x = Math.floor(Math.random() * COLS);
           const y = Math.floor(Math.random() * ROWS);
           if (map[y] && map[y][x] === T.DESERT) {
@@ -774,8 +958,10 @@
             }
           }
         }
-        // 島（草）を配置
-        for(let i = 0; i < 8; i++){
+        // ボスフィールド判定（南東の四隅）
+        const isBossFieldSE = (mapX === 3 && mapY === 3);
+        // 島（草）を配置（ボスフィールドは少なめ）
+        for(let i = 0; i < (isBossFieldSE ? 2 : 8); i++){
           const islandX = Math.floor(Math.random() * (COLS - 6)) + 3;
           const islandY = Math.floor(Math.random() * (ROWS - 6)) + 3;
           for(let y = islandY - 2; y < islandY + 3 && y < ROWS; y++) {
@@ -786,8 +972,8 @@
             }
           }
         }
-        // 島に木を配置
-        for(let i = 0; i < 15; i++){
+        // 島に木を配置（ボスフィールドは少なめ）
+        for(let i = 0; i < (isBossFieldSE ? 3 : 15); i++){
           const x = Math.floor(Math.random() * COLS);
           const y = Math.floor(Math.random() * ROWS);
           if (map[y] && map[y][x] === T.GRASS) {
@@ -860,7 +1046,7 @@
         if (currentMapY < 0) mapType = 'cactus';
         else mapType = 'ocean';
       }
-      maps.set(key, generateMap(mapType));
+      maps.set(key, generateMap(mapType, currentMapX, currentMapY));
     }
     return maps.get(key);
   }
@@ -942,32 +1128,58 @@
     },
   };
 
+  // キーボード入力ハンドラー（後で定義される関数を参照するため、後で設定）
+  let handleKeyDown, handleKeyUp;
+  
   // キーボード
-  window.addEventListener('keydown', (e) => {
+  handleKeyDown = (e) => {
+    // Escapeキーは常に有効
+    if (e.key === 'Escape') {
+      if (typeof toggleWeaponSelect === 'function') {
+        toggleWeaponSelect();
+      }
+      e.preventDefault();
+      return;
+    }
+    
+    // ポーズ中やエンディング中は他のキーを無効化
+    if (state.paused || state.ending) {
+      return;
+    }
+    
     switch(e.key){
       case 'ArrowLeft': Input.ax = -1; break;
       case 'ArrowRight': Input.ax = 1; break;
       case 'ArrowUp': Input.ay = -1; break;
       case 'ArrowDown': Input.ay = 1; break;
-      case ' ': case 'j': Input.a = true; break;
-      case 'k': case 'z': Input.b = true; break;
-      case 'x': Input.x = true; break;
-      case 'Escape': togglePause(); break;
+      case ' ': case 'j': case 'J': Input.a = true; break;
+      case 'k': case 'z': case 'K': case 'Z': Input.b = true; break;
+      case 'x': case 'X': Input.x = true; break;
+      default: return; // 他のキーは処理しない
     }
     e.preventDefault();
-  });
+  };
   
-  window.addEventListener('keyup', (e) => {
+  handleKeyUp = (e) => {
+    // ポーズ中やエンディング中は無効化
+    if (state.paused || state.ending) {
+      return;
+    }
+    
     switch(e.key){
       case 'ArrowLeft': if (Input.ax<0) Input.ax = 0; break;
       case 'ArrowRight': if (Input.ax>0) Input.ax = 0; break;
       case 'ArrowUp': if (Input.ay<0) Input.ay = 0; break;
       case 'ArrowDown': if (Input.ay>0) Input.ay = 0; break;
-      case ' ': case 'j': Input.a = false; break;
-      case 'k': case 'z': Input.b = false; break;
-      case 'x': Input.x = false; break;
+      case ' ': case 'j': case 'J': Input.a = false; break;
+      case 'k': case 'z': case 'K': case 'Z': Input.b = false; break;
+      case 'x': case 'X': Input.x = false; break;
+      default: return;
     }
-  });
+  };
+  
+  window.addEventListener('keydown', handleKeyDown);
+  window.addEventListener('keyup', handleKeyUp);
 
   // タッチ
   const stick = document.getElementById('stick');
@@ -1008,27 +1220,58 @@
     }
   });
 
+  // ボタンの打感（触覚フィードバック）
+  const vibrate = (pattern = [10]) => {
+    if ('vibrate' in navigator) {
+      try {
+        navigator.vibrate(pattern);
+      } catch (e) {
+        // エラーは無視
+      }
+    }
+  };
+
   // ボタン
   const btnA = document.getElementById('btnA');
   const btnB = document.getElementById('btnB');
   const btnX = document.getElementById('btnX');
 
-  const pressBtn = (key) => (e) => {
+  const pressBtn = (key, btn) => (e) => {
     e.preventDefault();
     Input[key] = true;
     Sound.playSound('button');
+    
+    // 打感：触覚フィードバック
+    vibrate([5, 5, 10]);
+    
+    // 打感：視覚的フィードバック
+    btn.classList.add('pressed');
+    setTimeout(() => {
+      btn.classList.remove('pressed');
+    }, 150);
   };
   const releaseBtn = (key) => (e) => {
     e.preventDefault();
     Input[key] = false;
   };
 
-  btnA.addEventListener('pointerdown', pressBtn('a'));
+  btnA.addEventListener('pointerdown', pressBtn('a', btnA));
   btnA.addEventListener('pointerup', releaseBtn('a'));
-  btnB.addEventListener('pointerdown', pressBtn('b'));
+  btnA.addEventListener('pointercancel', releaseBtn('a'));
+  btnB.addEventListener('pointerdown', pressBtn('b', btnB));
   btnB.addEventListener('pointerup', releaseBtn('b'));
-  btnX.addEventListener('pointerdown', pressBtn('x'));
+  btnB.addEventListener('pointercancel', releaseBtn('b'));
+  btnX.addEventListener('pointerdown', pressBtn('x', btnX));
   btnX.addEventListener('pointerup', releaseBtn('x'));
+  btnX.addEventListener('pointercancel', releaseBtn('x'));
+
+  // 武器の種類
+  const WEAPONS = {
+    BOMB: { id: 'bomb', name: '爆弾', icon: '💣', color: '#333' },
+    SHURIKEN: { id: 'shuriken', name: '手裏剣', icon: '⭐', color: '#ffd700' },
+    SPEAR: { id: 'spear', name: '長槍', icon: '🔱', color: '#4a90e2' },
+    BAZOOKA: { id: 'bazooka', name: 'バズーカ', icon: '🚀', color: '#ff4500' }
+  };
 
   // ゲーム状態
   const state = {
@@ -1038,6 +1281,10 @@
     tutorialStep: 0,
     paused: false,
     hintTimer: 0,
+    weapons: [WEAPONS.BOMB.id], // 所持武器リスト（初期は爆弾のみ）
+    currentWeapon: WEAPONS.BOMB.id, // 現在装備中の武器
+    bossItems: [], // ボスから入手したアイテム
+    ending: false, // エンディングフラグ
   };
 
   // HUD要素
@@ -1049,8 +1296,17 @@
   const speechBubbleEl = document.getElementById('speechBubble');
   const minimapCanvas = document.getElementById('minimap');
   const minimapCtx = minimapCanvas.getContext('2d');
+  
+  // 横画面用の要素
+  const heartElLandscape = document.getElementById('hearts-landscape');
+  const coinsElLandscape = document.getElementById('coins-landscape');
+  const levelElLandscape = document.getElementById('level-landscape');
+  const minimapCanvasLandscape = document.getElementById('minimap-landscape');
+  const minimapCtxLandscape = minimapCanvasLandscape ? minimapCanvasLandscape.getContext('2d') : null;
+  const btnPauseLandscape = document.getElementById('btnPause-landscape');
 
   function renderHUD(){
+    // 縦画面用
     heartEl.innerHTML = '';
     for (let i=0;i<state.maxHp;i++){
       const d = document.createElement('div');
@@ -1059,6 +1315,18 @@
     }
     coinsEl.textContent = state.coins;
     levelEl.textContent = state.level;
+    
+    // 横画面用
+    if (heartElLandscape) {
+      heartElLandscape.innerHTML = '';
+      for (let i=0;i<state.maxHp;i++){
+        const d = document.createElement('div');
+        d.className = 'heart' + (i >= state.hp? ' empty':'');
+        heartElLandscape.appendChild(d);
+      }
+    }
+    if (coinsElLandscape) coinsElLandscape.textContent = state.coins;
+    if (levelElLandscape) levelElLandscape.textContent = state.level;
   }
 
   function showHint(txt, secs=1.5){
@@ -1105,114 +1373,141 @@
 
   // ミニマップ描画
   function drawMinimap() {
-    minimapCtx.clearRect(0, 0, 150, 150);
+    const drawToCanvas = (ctx, canvas) => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // 背景
-    minimapCtx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-    minimapCtx.fillRect(0, 0, 150, 150);
-    
-    // マップのサイズ（5x5グリッド表示）
-    const cellSize = 12; // 5x5グリッドに収めるため少し小さく
-    const drawSize = cellSize - 1; // 実際の描画サイズ（11px）
-    
-    // 中央マップ(0,0)のマスの中心がミニマップの中心に来るようにオフセットを計算
-    // 中央マップは(2,2)の位置（5x5グリッドの中央）
-    // ミニマップの中心: (150/2, 150/2) = (75, 75)
-    // マスの中心が(75, 75)になるように
-    // マスの左上 = 中心 - drawSize/2
-    // offsetX + 2 * cellSize + drawSize/2 = 75
-    // offsetX = 75 - 2 * cellSize - drawSize/2
-    const offsetX = 75 - 2 * cellSize - drawSize / 2; // 75 - 24 - 5.5 = 45.5
-    const offsetY = 75 - 2 * cellSize - drawSize / 2; // 75 - 24 - 5.5 = 45.5
-    
-    // 訪問したマップを描画
-    const mapTypes = {
-      '0,0': { name: '村', color: '#8b7355' },
-      '0,-1': { name: '森', color: '#228b22' },
-      '0,1': { name: '海岸', color: '#1e3a8a' },
-      '-1,0': { name: '洞窟', color: '#555' },
-      '1,0': { name: '草原', color: '#2d5016' },
-      '-1,-1': { name: '廃墟', color: '#666' },
-      '1,-1': { name: '花畑', color: '#ff69b4' },
-      '-1,1': { name: '海岸洞窟', color: '#4a5568' },
-      '1,1': { name: 'ビーチ', color: '#d4a574' }
-    };
-    
-    // 新しいマップタイプの色を動的に決定
-    const getMapColor = (x, y) => {
-      const key = getMapKey(x, y);
-      if (mapTypes[key]) return mapTypes[key].color;
+      // 背景
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
       
-      // 新しいマップタイプの色
-      if (x >= 2 || (x > 0 && y <= -2)) return '#90EE90'; // サボテン（明るい緑）
-      if (x <= -2 || (x < 0 && y <= -2)) return '#E0E0E0'; // 雪（白）
-      if (x <= -2 || (x < 0 && y >= 2)) return '#D2B48C'; // 砂漠（ベージュ）
-      if (x >= 2 || (x > 0 && y >= 2)) return '#4169E1'; // 海洋（青）
-      return '#666'; // デフォルト
-    };
-    
-    // 各マップ位置を描画（5x5グリッド、中央が(2,2)）
-    // x: -2から2まで、y: -2から2まで
-    const mapPositions = [];
-    for(let y = -2; y <= 2; y++) {
-      for(let x = -2; x <= 2; x++) {
-        mapPositions.push({
-          key: `${x},${y}`,
-          x: x + 2, // -2を0に、0を2に、2を4に変換
-          y: y + 2  // -2を0に、0を2に、2を4に変換
-        });
-      }
-    }
-    
-    for (const pos of mapPositions) {
-      const [mx, my] = pos.key.split(',').map(Number);
-      const isVisited = isMapVisited(mx, my);
-      const isCurrent = (currentMapX === mx && currentMapY === my);
+      // マップのサイズ（7x7グリッド表示）
+      const cellSize = 10; // 7x7グリッドに収めるため少し小さく
+      const drawSize = cellSize - 1; // 実際の描画サイズ（9px）
       
-      if (isVisited || isCurrent) {
-        const mapColor = mapTypes[pos.key] ? mapTypes[pos.key].color : getMapColor(mx, my);
-        const px = offsetX + pos.x * cellSize;
-        const py = offsetY + pos.y * cellSize;
+      // 中央マップ(0,0)のマスの中心がミニマップの中心に来るようにオフセットを計算
+      // 中央マップは(3,3)の位置（7x7グリッドの中央）
+      // ミニマップの中心: (canvas.width/2, canvas.height/2)
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      const offsetX = centerX - 3 * cellSize - drawSize / 2;
+      const offsetY = centerY - 3 * cellSize - drawSize / 2;
+      
+      // 訪問したマップを描画
+      const mapTypes = {
+        '0,0': { name: '村', color: '#8b7355' },
+        '0,-1': { name: '森', color: '#228b22' },
+        '0,1': { name: '海岸', color: '#1e3a8a' },
+        '-1,0': { name: '洞窟', color: '#555' },
+        '1,0': { name: '草原', color: '#2d5016' },
+        '-1,-1': { name: '廃墟', color: '#666' },
+        '1,-1': { name: '花畑', color: '#ff69b4' },
+        '-1,1': { name: '海岸洞窟', color: '#4a5568' },
+        '1,1': { name: 'ビーチ', color: '#d4a574' }
+      };
+      
+      // 新しいマップタイプの色を動的に決定
+      const getMapColor = (x, y) => {
+        const key = getMapKey(x, y);
+        if (mapTypes[key]) return mapTypes[key].color;
         
-        // マップセルを描画
-        minimapCtx.fillStyle = isCurrent ? '#ffd700' : mapColor;
-        minimapCtx.fillRect(px, py, cellSize - 2, cellSize - 2);
-        
-        // 現在位置のハイライト
-        if (isCurrent) {
-          minimapCtx.strokeStyle = '#fff';
-          minimapCtx.lineWidth = 1.5;
-          minimapCtx.strokeRect(px - 0.5, py - 0.5, cellSize - 1, cellSize - 1);
-          
-          // 現在位置のインジケーター
-          minimapCtx.fillStyle = '#fff';
-          minimapCtx.beginPath();
-          minimapCtx.arc(px + cellSize/2, py + cellSize/2, 2, 0, Math.PI * 2);
-          minimapCtx.fill();
-        } else {
-          // 訪問済みマップの枠
-          minimapCtx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-          minimapCtx.lineWidth = 0.5;
-          minimapCtx.strokeRect(px, py, cellSize - 2, cellSize - 2);
+        // 新しいマップタイプの色
+        if (x >= 2 || (x > 0 && y <= -2)) return '#90EE90'; // サボテン（明るい緑）
+        if (x <= -2 || (x < 0 && y <= -2)) return '#E0E0E0'; // 雪（白）
+        if (x <= -2 || (x < 0 && y >= 2)) return '#D2B48C'; // 砂漠（ベージュ）
+        if (x >= 2 || (x > 0 && y >= 2)) return '#4169E1'; // 海洋（青）
+        return '#666'; // デフォルト
+      };
+      
+      // 各マップ位置を描画（7x7グリッド、中央が(3,3)）
+      // x: -3から3まで、y: -3から3まで
+      const mapPositions = [];
+      for(let y = -3; y <= 3; y++) {
+        for(let x = -3; x <= 3; x++) {
+          mapPositions.push({
+            key: `${x},${y}`,
+            x: x + 3, // -3を0に、0を3に、3を6に変換
+            y: y + 3  // -3を0に、0を3に、3を6に変換
+          });
         }
       }
-    }
+      
+      // 武器が入っている宝箱があるマップを判定
+      const hasWeaponChest = (mx, my) => {
+        // 手裏剣：南東方向（2, 2）
+        if (mx === 2 && my === 2) return true;
+        // 長槍：北西方向（-2, -2）
+        if (mx === -2 && my === -2) return true;
+        // バズーカ：北東方向（2, -2）
+        if (mx === 2 && my === -2) return true;
+        return false;
+      };
+      
+      for (const pos of mapPositions) {
+        const [mx, my] = pos.key.split(',').map(Number);
+        const isVisited = isMapVisited(mx, my);
+        const isCurrent = (currentMapX === mx && currentMapY === my);
+        
+        if (isVisited || isCurrent) {
+          const mapColor = mapTypes[pos.key] ? mapTypes[pos.key].color : getMapColor(mx, my);
+          const px = offsetX + pos.x * cellSize;
+          const py = offsetY + pos.y * cellSize;
+          
+          // マップセルを描画
+          ctx.fillStyle = isCurrent ? '#ffd700' : mapColor;
+          ctx.fillRect(px, py, cellSize - 2, cellSize - 2);
+          
+          // 現在位置のハイライト
+          if (isCurrent) {
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(px - 0.5, py - 0.5, cellSize - 1, cellSize - 1);
+            
+            // 現在位置のインジケーター
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(px + cellSize/2, py + cellSize/2, 2, 0, Math.PI * 2);
+            ctx.fill();
+          } else {
+            // 訪問済みマップの枠
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.lineWidth = 0.5;
+            ctx.strokeRect(px, py, cellSize - 2, cellSize - 2);
+          }
+          
+          // 武器が入っている宝箱があるマップに小さな赤丸を表示
+          if (hasWeaponChest(mx, my)) {
+            ctx.fillStyle = '#ff0000';
+            ctx.beginPath();
+            ctx.arc(px + cellSize - 3, py + 3, 2, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+      }
+      
+      // グリッド線（デバッグ用、必要に応じてコメントアウト）
+      // ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+      // ctx.lineWidth = 1;
+      // for (let i = 0; i <= 3; i++) {
+      //   ctx.beginPath();
+      //   ctx.moveTo(offsetX + i * cellSize, offsetY);
+      //   ctx.lineTo(offsetX + i * cellSize, offsetY + 3 * cellSize);
+      //   ctx.stroke();
+      // }
+      // for (let i = 0; i <= 3; i++) {
+      //   ctx.beginPath();
+      //   ctx.moveTo(offsetX, offsetY + i * cellSize);
+      //   ctx.lineTo(offsetX + 3 * cellSize, offsetY + i * cellSize);
+      //   ctx.stroke();
+      // }
+    };
     
-    // グリッド線（デバッグ用、必要に応じてコメントアウト）
-    // minimapCtx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
-    // minimapCtx.lineWidth = 1;
-    // for (let i = 0; i <= 3; i++) {
-    //   minimapCtx.beginPath();
-    //   minimapCtx.moveTo(offsetX + i * cellSize, offsetY);
-    //   minimapCtx.lineTo(offsetX + i * cellSize, offsetY + 3 * cellSize);
-    //   minimapCtx.stroke();
-    // }
-    // for (let i = 0; i <= 3; i++) {
-    //   minimapCtx.beginPath();
-    //   minimapCtx.moveTo(offsetX, offsetY + i * cellSize);
-    //   minimapCtx.lineTo(offsetX + 3 * cellSize, offsetY + i * cellSize);
-    //   minimapCtx.stroke();
-    // }
+    // 縦画面用のミニマップを描画
+    drawToCanvas(minimapCtx, minimapCanvas);
+    
+    // 横画面用のミニマップを描画（同じ内容）
+    if (minimapCtxLandscape && minimapCanvasLandscape) {
+      drawToCanvas(minimapCtxLandscape, minimapCanvasLandscape);
+    }
   }
 
   function gainExp(amount) {
@@ -1254,6 +1549,7 @@
       this.speed=60; this.hp=state.hp; this.maxHp=state.maxHp;
       this.inv=0; this.attackCd=0; this.swordT=0;
       this.sdx=1; this.sdy=0;
+      this.weaponCd=0; // 武器使用時の硬直時間
     }
   }
 
@@ -1261,8 +1557,18 @@
     constructor(x,y) {
       super(x,y);
       this.speed=25; this.hp=2; this.change=0; this.bounceT=0;
+      this.knockbackT=0; // ノックバック時間
     }
     update(dt) {
+      // ノックバック処理
+      if (this.knockbackT > 0) {
+        this.knockbackT -= dt;
+        if (this.knockbackT <= 0) {
+          this.vx = 0;
+          this.vy = 0;
+        }
+        return; // ノックバック中は通常の移動をスキップ
+      }
       this.bounceT += dt * 4;
       if ((this.change-=dt)<=0) {
         this.change = Math.random() * 2 + 0.8;
@@ -1367,6 +1673,259 @@
     }
   }
 
+  // ボスクラス
+  class Boss extends Entity {
+    constructor(x, y, type) {
+      super(x, y);
+      this.type = type; // 'suzaku', 'genbu', 'seiryu', 'kirin'
+      this.w = 48; this.h = 48; // 4倍の大きさ
+      this.maxHp = 50;
+      this.hp = 50;
+      this.dead = false;
+      this.attackCd = 0;
+      this.attackPattern = 0;
+      this.animT = 0;
+      this.bullets = [];
+      
+      this.moveT = 0; // 移動タイマー
+      this.moveDir = 0; // 移動方向（0-3: 上下左右）
+      this.moveSpeed = 20; // ゆっくり動く速度
+      this.moveCd = 0; // 移動方向変更のクールダウン
+      
+      // ボスタイプごとの設定
+      switch(type) {
+        case 'suzaku': // 朱雀（南）- 円形に動き回る
+          this.color = '#ff0000';
+          this.attackSpeed = 1.5;
+          this.movePattern = 'circle';
+          break;
+        case 'genbu': // 玄武（北）- 前後に動く
+          this.color = '#000080';
+          this.attackSpeed = 2.0;
+          this.movePattern = 'backforth';
+          break;
+        case 'seiryu': // 青龍（東）- 左右に動く
+          this.color = '#00ffff';
+          this.attackSpeed = 1.0;
+          this.movePattern = 'sideways';
+          break;
+        case 'kirin': // 麒麟（西）- プレイヤーを追いかける
+          this.color = '#ffd700';
+          this.attackSpeed = 1.8;
+          this.movePattern = 'chase';
+          break;
+      }
+    }
+    
+    update(dt) {
+      this.animT += dt;
+      this.attackCd -= dt;
+      this.moveT += dt;
+      this.moveCd -= dt;
+      
+      // ボスの移動パターン
+      if (!this.dead) {
+        this.move(dt);
+      }
+      
+      if (this.attackCd <= 0) {
+        this.attack();
+        this.attackCd = this.attackSpeed;
+        this.attackPattern = (this.attackPattern + 1) % 3;
+      }
+    }
+    
+    move(dt) {
+      const oldX = this.x;
+      const oldY = this.y;
+      
+      switch(this.movePattern) {
+        case 'circle': // 朱雀：円形に動き回る
+          const radius = 40;
+          const centerX = 160;
+          const centerY = 90;
+          this.x = centerX + Math.cos(this.moveT * 0.5) * radius;
+          this.y = centerY + Math.sin(this.moveT * 0.5) * radius;
+          break;
+          
+        case 'backforth': // 玄武：前後に動く
+          if (this.moveCd <= 0) {
+            this.moveDir = (this.moveDir === 0) ? 1 : 0; // 0: 上、1: 下
+            this.moveCd = 2.0;
+          }
+          if (this.moveDir === 0) {
+            this.y -= this.moveSpeed * dt;
+            if (this.y < 50) {
+              this.y = 50;
+              this.moveDir = 1;
+            }
+          } else {
+            this.y += this.moveSpeed * dt;
+            if (this.y > 130) {
+              this.y = 130;
+              this.moveDir = 0;
+            }
+          }
+          break;
+          
+        case 'sideways': // 青龍：左右に動く
+          if (this.moveCd <= 0) {
+            this.moveDir = (this.moveDir === 0) ? 1 : 0; // 0: 左、1: 右
+            this.moveCd = 2.0;
+          }
+          if (this.moveDir === 0) {
+            this.x -= this.moveSpeed * dt;
+            if (this.x < 80) {
+              this.x = 80;
+              this.moveDir = 1;
+            }
+          } else {
+            this.x += this.moveSpeed * dt;
+            if (this.x > 240) {
+              this.x = 240;
+              this.moveDir = 0;
+            }
+          }
+          break;
+          
+        case 'chase': // 麒麟：プレイヤーを追いかける（ゆっくり）
+          const dx = player.x - this.x;
+          const dy = player.y - this.y;
+          const dist = Math.hypot(dx, dy);
+          if (dist > 0) {
+            const speed = this.moveSpeed * dt;
+            this.x += (dx / dist) * speed;
+            this.y += (dy / dist) * speed;
+            
+            // マップの境界で止まる
+            this.x = Math.max(60, Math.min(260, this.x));
+            this.y = Math.max(50, Math.min(130, this.y));
+          }
+          break;
+      }
+      
+      // タイルとの衝突判定（移動を元に戻す）
+      if (collidesTile(this.x, this.y, this.w, this.h)) {
+        this.x = oldX;
+        this.y = oldY;
+      }
+    }
+    
+    attack() {
+      const dx = player.x - this.x;
+      const dy = player.y - this.y;
+      const dist = Math.hypot(dx, dy);
+      
+      switch(this.type) {
+        case 'suzaku': // 朱雀：火の玉を3発
+          for (let i = 0; i < 3; i++) {
+            const angle = Math.atan2(dy, dx) + (i - 1) * 0.3;
+            this.bullets.push({
+              x: this.x, y: this.y,
+              vx: Math.cos(angle) * 80,
+              vy: Math.sin(angle) * 80,
+              life: 3.0,
+              color: '#ff4500'
+            });
+          }
+          break;
+        case 'genbu': // 玄武：氷の弾を5発（扇状）
+          for (let i = 0; i < 5; i++) {
+            const angle = Math.atan2(dy, dx) + (i - 2) * 0.4;
+            this.bullets.push({
+              x: this.x, y: this.y,
+              vx: Math.cos(angle) * 60,
+              vy: Math.sin(angle) * 60,
+              life: 4.0,
+              color: '#00bfff'
+            });
+          }
+          break;
+        case 'seiryu': // 青龍：雷の弾を8発（円形）
+          for (let i = 0; i < 8; i++) {
+            const angle = (i / 8) * Math.PI * 2;
+            this.bullets.push({
+              x: this.x, y: this.y,
+              vx: Math.cos(angle) * 70,
+              vy: Math.sin(angle) * 70,
+              life: 2.5,
+              color: '#ffff00'
+            });
+          }
+          break;
+        case 'kirin': // 麒麟：追尾弾
+          this.bullets.push({
+            x: this.x, y: this.y,
+            vx: (dx / dist) * 50,
+            vy: (dy / dist) * 50,
+            life: 5.0,
+            color: '#ffd700',
+            tracking: true
+          });
+          break;
+      }
+      Sound.playSound('button');
+    }
+  }
+
+  // 村長ボスクラス
+  class VillageChiefBoss extends Entity {
+    constructor(x, y) {
+      super(x, y);
+      this.w = 36; this.h = 36; // 通常サイズ
+      this.maxHp = 100;
+      this.hp = 100;
+      this.dead = false;
+      this.phase = 1; // 1: 通常、2: 巨大化、3: 本気
+      this.attackCd = 0;
+      this.bullets = [];
+      this.animT = 0;
+      this.speed = 40;
+      this.scale = 1;
+    }
+    
+    update(dt) {
+      this.animT += dt;
+      this.attackCd -= dt;
+      
+      if (this.phase === 2) {
+        this.scale = 3; // 3倍に巨大化
+        this.w = 108; this.h = 108;
+      } else if (this.phase === 3) {
+        this.scale = 3;
+        this.w = 108; this.h = 108;
+        this.speed = 80; // 素早さ2倍
+      }
+      
+      // プレイヤーに向かって移動
+      const dx = player.x - this.x;
+      const dy = player.y - this.y;
+      const dist = Math.hypot(dx, dy);
+      if (dist > 0) {
+        this.vx = (dx / dist) * this.speed;
+        this.vy = (dy / dist) * this.speed;
+      }
+      
+      if (this.attackCd <= 0) {
+        if (this.phase === 3) {
+          // 本気モード：弾を打つ
+          for (let i = 0; i < 5; i++) {
+            const angle = Math.atan2(dy, dx) + (i - 2) * 0.2;
+            this.bullets.push({
+              x: this.x, y: this.y,
+              vx: Math.cos(angle) * 100,
+              vy: Math.sin(angle) * 100,
+              life: 3.0,
+              color: ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff'][i % 5]
+            });
+          }
+        }
+        this.attackCd = this.phase === 3 ? 0.8 : 1.5;
+        Sound.playSound('button');
+      }
+    }
+  }
+
   class Arrow extends Entity {
     constructor(x,y,vx,vy) {
       super(x,y);
@@ -1374,15 +1933,67 @@
     }
   }
 
+  class Shuriken extends Entity {
+    constructor(x, y, vx, vy) {
+      super(x, y);
+      this.vx = vx;
+      this.vy = vy;
+      this.w = 8;
+      this.h = 8;
+      this.life = 2.0;
+      this.rot = 0;
+      this.dead = false;
+    }
+  }
+
+  class Spear extends Entity {
+    constructor(x, y, vx, vy) {
+      super(x, y);
+      this.vx = vx;
+      this.vy = vy;
+      this.w = 8;
+      this.h = 20;
+      this.life = 2.5;
+      this.rot = 0;
+      this.dead = false;
+    }
+  }
+
+  class Rocket extends Entity {
+    constructor(x, y, vx, vy) {
+      super(x, y);
+      this.vx = vx;
+      this.vy = vy;
+      this.w = 6;
+      this.h = 12;
+      this.life = 3.0;
+      this.rot = 0;
+      this.dead = false;
+    }
+  }
+
   class Bomb {
     constructor(x,y) {
-      this.x=x; this.y=y; this.t=1.2; this.exploded=false;
+      this.x=x; this.y=y; this.t=5.0; this.exploded=false; // 5秒後に爆発
     }
   }
 
   class Explosion {
     constructor(x,y) {
       this.x=x; this.y=y; this.t=0.4; this.power=2;
+    }
+  }
+
+  // バズーカの破片
+  class Fragment extends Entity {
+    constructor(x, y, vx, vy) {
+      super(x, y);
+      this.vx = vx;
+      this.vy = vy;
+      this.w = 3;
+      this.h = 3;
+      this.life = 0.5;
+      this.dead = false;
     }
   }
 
@@ -1402,21 +2013,51 @@
         snowwolves: [],
         scorpions: [],
         krakens: [],
-        firespirits: []
+        firespirits: [],
+        bosses: [],
+        chiefBoss: null
       };
+      
+      // 四隅にボスを配置
+      if (currentMapX === -3 && currentMapY === -3) {
+        // 北西：玄武
+        entities.bosses = [new Boss(160, 90, 'genbu')];
+      } else if (currentMapX === 3 && currentMapY === -3) {
+        // 北東：青龍
+        entities.bosses = [new Boss(160, 90, 'seiryu')];
+      } else if (currentMapX === -3 && currentMapY === 3) {
+        // 南西：麒麟
+        entities.bosses = [new Boss(160, 90, 'kirin')];
+      } else if (currentMapX === 3 && currentMapY === 3) {
+        // 南東：朱雀
+        entities.bosses = [new Boss(160, 90, 'suzaku')];
+      }
       
       // マップタイプに応じてエンティティを配置
       if (currentMapX === 0 && currentMapY === 0) {
         // 中央：村のフィールド
         entities.npcs = [{
           x: 160, y: 56, r: 14, 
-          texts: [
-            'ようこそ、勇者よ！\n私はこの村の長老だ。',
-            '最近、危険なモンスターが\n増えて困っているんだ。',
-            '君の力で村を守って\nくれるとありがたい。',
-            '⚔️ボタンで攻撃、\n💣ボタンで爆弾が使えるぞ。',
-            '頑張ってくれ！'
-          ],
+          texts: (() => {
+            const base = [
+              'ようこそ、勇者よ！\n私はこの村の長老だ。',
+              '最近、危険なモンスターが\n増えて困っているんだ。',
+              '君の力で村を守って\nくれるとありがたい。',
+              '⚔️ボタンで攻撃、\n💣ボタンで爆弾が使えるぞ。',
+              '頑張ってくれ！'
+            ];
+            
+            // ボスアイテムを獲得したら褒める
+            if (state.bossItems.length > 0) {
+              const items = state.bossItems;
+              if (items.includes('村長の杖')) base.push('おお、村長の杖を！\nよくやった！歩きづらかったのじゃ');
+              if (items.includes('村長のメガネ')) base.push('村長のメガネも！\n素晴らしい！おお、そんな顔をしておったのか');
+              if (items.includes('村長の証明書')) base.push('村長の証明書まで！\n助かった！どこに行ったかと思っておった');
+              if (items.includes('村長のハンカチ')) base.push('村長のハンカチも！\n完璧だ！大人のたしなみじゃのお');
+            }
+            
+            return base;
+          })(),
           deathTexts: [
             'おいおい...また死んじまったのか。',
             '頼んだのに、こんなに\n弱いんじゃ困るんだよ。',
@@ -1428,7 +2069,10 @@
           talked: false,
           rewardShown: false
         }];
-        entities.chests = [{x: 208, y: 96, r: 12, opened:false}, {x: 80, y: 140, r: 12, opened:false}];
+        entities.chests = [
+          {x: 208, y: 96, r: 12, opened:false},
+          {x: 80, y: 140, r: 12, opened:false}
+        ];
         entities.slimes = [new Slime(80,40), new Slime(260,120), new Slime(50,160)];
         entities.archers = [new Archer(56,40), new Archer(280,60)];
       } else if (currentMapX === 0 && currentMapY === -1) {
@@ -1456,6 +2100,18 @@
         entities.chests = [{x: 160, y: 80, r: 12, opened:false}];
         entities.slimes = [new Slime(120,60), new Slime(200,80), new Slime(80,100)];
         entities.archers = [new Archer(100,70), new Archer(220,90)];
+      } else if (currentMapX === 3 && currentMapY === -3) {
+        // 北東の四隅：青龍ボスフィールド（バズーカの宝箱は別の場所）
+        entities.chests = [{x: 160, y: 80, r: 12, opened:false}];
+      } else if (currentMapX === -3 && currentMapY === -3) {
+        // 北西の四隅：玄武ボスフィールド（長槍の宝箱は別の場所）
+        entities.chests = [{x: 160, y: 80, r: 12, opened:false}];
+      } else if (currentMapX === -3 && currentMapY === 3) {
+        // 南西の四隅：麒麟ボスフィールド
+        entities.chests = [{x: 160, y: 80, r: 12, opened:false}];
+      } else if (currentMapX === 3 && currentMapY === 3) {
+        // 南東の四隅：朱雀ボスフィールド（手裏剣の宝箱は別の場所）
+        entities.chests = [{x: 160, y: 80, r: 12, opened:false}];
       } else if (currentMapX === 1 && currentMapY === -1) {
         // 北東：花畑のエリア
         entities.chests = [{x: 160, y: 80, r: 12, opened:false}, {x: 240, y: 60, r: 12, opened:false}];
@@ -1471,24 +2127,60 @@
         entities.chests = [{x: 160, y: 50, r: 12, opened:false}, {x: 240, y: 70, r: 12, opened:false}];
         entities.slimes = [new Slime(100,40), new Slime(220,60), new Slime(60,50)];
         entities.archers = [new Archer(140,45)];
+      } else if (currentMapX === 2 && currentMapY === -2) {
+        // 北東方向：サボテン、陽気な世界（バズーカの宝箱 - 1つのみ）
+        entities.chests = [
+          {x: 160, y: 80, r: 12, opened:false},
+          {x: 80, y: 100, r: 12, opened:false},
+          {x: 240, y: 60, r: 12, opened:false, weapon: 'bazooka'} // バズーカ
+        ];
+        entities.cacti = [new CactusMonster(100,50), new CactusMonster(220,70), new CactusMonster(60,90), new CactusMonster(260,50)];
+        entities.firespirits = [new FireSpirit(140,60), new FireSpirit(180,80)];
+      } else if (currentMapX === -2 && currentMapY === -2) {
+        // 北西方向：雪、森林地帯、山（長槍の宝箱 - 1つのみ）
+        entities.chests = [
+          {x: 80, y: 60, r: 12, opened:false, weapon: 'spear'} // 長槍
+        ];
+        entities.snowwolves = [new SnowWolf(100,50), new SnowWolf(220,70), new SnowWolf(60,100), new SnowWolf(240,40)];
+        entities.archers = [new Archer(120,60), new Archer(200,80)];
+      } else if (currentMapX === 2 && currentMapY === 2) {
+        // 南東方向：水と島、海洋（手裏剣の宝箱 - 1つのみ）
+        entities.chests = [
+          {x: 160, y: 50, r: 12, opened:false},
+          {x: 240, y: 70, r: 12, opened:false},
+          {x: 80, y: 40, r: 12, opened:false, weapon: 'shuriken'} // 手裏剣
+        ];
+        entities.krakens = [new OceanKraken(100,40), new OceanKraken(220,60), new OceanKraken(60,50), new OceanKraken(260,80)];
+        entities.archers = [new Archer(140,45)];
       } else if (currentMapX >= 2 || (currentMapX > 0 && currentMapY <= -2)) {
-        // 北東方向：サボテン、陽気な世界
-        entities.chests = [{x: 160, y: 80, r: 12, opened:false}, {x: 80, y: 100, r: 12, opened:false}, {x: 240, y: 60, r: 12, opened:false}];
+        // その他の北東方向：サボテン、陽気な世界（バズーカなし）
+        entities.chests = [
+          {x: 160, y: 80, r: 12, opened:false},
+          {x: 80, y: 100, r: 12, opened:false}
+        ];
         entities.cacti = [new CactusMonster(100,50), new CactusMonster(220,70), new CactusMonster(60,90), new CactusMonster(260,50)];
         entities.firespirits = [new FireSpirit(140,60), new FireSpirit(180,80)];
       } else if (currentMapX <= -2 || (currentMapX < 0 && currentMapY <= -2)) {
-        // 北西方向：雪、森林地帯、山
-        entities.chests = [{x: 160, y: 80, r: 12, opened:false}, {x: 80, y: 60, r: 12, opened:false}];
+        // その他の北西方向：雪、森林地帯、山（長槍なし）
+        entities.chests = [
+          {x: 160, y: 80, r: 12, opened:false}
+        ];
         entities.snowwolves = [new SnowWolf(100,50), new SnowWolf(220,70), new SnowWolf(60,100), new SnowWolf(240,40)];
         entities.archers = [new Archer(120,60), new Archer(200,80)];
       } else if (currentMapX <= -2 || (currentMapX < 0 && currentMapY >= 2)) {
         // 南西方向：砂漠と洞窟
-        entities.chests = [{x: 160, y: 80, r: 12, opened:false}, {x: 80, y: 100, r: 12, opened:false}];
+        entities.chests = [
+          {x: 160, y: 80, r: 12, opened:false},
+          {x: 80, y: 100, r: 12, opened:false}
+        ];
         entities.scorpions = [new DesertScorpion(100,50), new DesertScorpion(220,70), new DesertScorpion(60,90), new DesertScorpion(240,100)];
         entities.archers = [new Archer(120,60)];
       } else if (currentMapX >= 2 || (currentMapX > 0 && currentMapY >= 2)) {
-        // 南東方向：水と島、海洋
-        entities.chests = [{x: 160, y: 50, r: 12, opened:false}, {x: 240, y: 70, r: 12, opened:false}, {x: 80, y: 40, r: 12, opened:false}];
+        // その他の南東方向：水と島、海洋（手裏剣なし）
+        entities.chests = [
+          {x: 160, y: 50, r: 12, opened:false},
+          {x: 240, y: 70, r: 12, opened:false}
+        ];
         entities.krakens = [new OceanKraken(100,40), new OceanKraken(220,60), new OceanKraken(60,50), new OceanKraken(260,80)];
         entities.archers = [new Archer(140,45)];
       } else if (currentMapY <= -2) {
@@ -1545,6 +2237,10 @@
   const arrows = [];
   const bombs = [];
   const blasts = [];
+  const shurikens = []; // 手裏剣
+  const spears = []; // 長槍（投擲用、今後は使用しない）
+  const rockets = []; // バズーカのロケット
+  const fragments = []; // バズーカの破片
 
   // 安全な衝突判定
   function getTile(x, y) {
@@ -1614,7 +2310,10 @@
 
     Sound.playSound('sword');
 
-    const range = 18; const w=16, h=12;
+    // 通常の剣のリーチ
+    const baseRange = 18;
+    const range = baseRange;
+    const w=16, h=12;
     const ax = player.x + dirX*range;
     const ay = player.y + dirY*range;
     const hit = (e) => Math.abs(e.x-ax)<w/2 && Math.abs(e.y-ay)<h/2;
@@ -1723,11 +2422,223 @@
     }
   }
 
-  function placeBomb() {
-    if (bombs.length >= 3) return;
-    bombs.push(new Bomb(Math.round(player.x/TS)*TS, Math.round(player.y/TS)*TS));
-    Sound.playSound('button');
-    showHint('💣 爆弾設置');
+  // 武器使用関数
+  function useWeapon() {
+    // ポーズ中やエンディング中は武器を使用できない
+    if (state.paused || state.ending) {
+      return;
+    }
+    
+    // 武器使用中の硬直時間中は使用できない
+    if (player.weaponCd > 0) {
+      return;
+    }
+    
+    // 武器選択ダイアログが開いている場合は閉じる
+    const weaponSelect = document.getElementById('weaponSelect');
+    if (weaponSelect && weaponSelect.open) {
+      weaponSelect.close();
+      state.paused = false;
+    }
+    
+    const weapon = WEAPONS[state.currentWeapon.toUpperCase()];
+    if (!weapon) return;
+
+    // 武器使用時の硬直時間を設定（武器によって異なる）
+    let cooldown = 0.2; // デフォルト
+    
+    switch(state.currentWeapon) {
+      case 'bomb':
+        if (bombs.length >= 3) return;
+        bombs.push(new Bomb(Math.round(player.x/TS)*TS, Math.round(player.y/TS)*TS));
+        Sound.playSound('button');
+        showHint('💣 爆弾設置');
+        cooldown = 0.3; // 爆弾は少し長め
+        break;
+      
+      case 'shuriken':
+        if (shurikens.length >= 5) return;
+        // プレイヤーの進行方向に真っ直ぐ飛ぶ
+        const dirX = Math.sign(Input.ax) || player.dir;
+        const dirY = Math.sign(Input.ay) || 0;
+        // 移動していない場合はプレイヤーの向いている方向に飛ぶ
+        const finalDirX = (dirX === 0 && dirY === 0) ? player.dir : dirX;
+        const finalDirY = (dirX === 0 && dirY === 0) ? 0 : dirY;
+        const speed = 150;
+        shurikens.push(new Shuriken(player.x, player.y, finalDirX * speed, finalDirY * speed));
+        Sound.playSound('sword');
+        showHint('⭐ 手裏剣');
+        cooldown = 0.15; // 手裏剣は素早い
+        break;
+      
+      case 'spear':
+        // 槍は近接攻撃として使用
+        if (player.attackCd > 0) return;
+        player.attackCd = 0.3;
+        
+        const sDirX = Math.sign(Input.ax || player.dir) || player.dir;
+        const sDirY = Math.sign(Input.ay || 0);
+        player.sdx = sDirX; player.sdy = sDirY;
+        player.swordT = 0.18;
+
+        Sound.playSound('sword');
+
+        // 槍の場合はリーチを2倍に
+        const baseRange = 18;
+        const range = baseRange * 2; // 槍は2倍のリーチ
+        const w=16, h=12;
+        const ax = player.x + sDirX*range;
+        const ay = player.y + sDirY*range;
+        const hit = (e) => Math.abs(e.x-ax)<w/2 && Math.abs(e.y-ay)<h/2;
+        
+        const entities = getMapEntities();
+        let hitSomething = false;
+        for (const s of entities.slimes) {
+          if (!s.dead && hit(s)) {
+            s.hp -= 2;
+            hitSomething = true;
+            if (s.hp<=0) {
+              s.dead=true;
+              state.coins+=3;
+              gainExp(2);
+              showHint('🔱 長槍でスライム撃破!');
+            }
+          }
+        }
+        for (const a of entities.archers) {
+          if (!a.dead && hit(a)) {
+            a.hp -= 2;
+            hitSomething = true;
+            if (a.hp<=0) {
+              a.dead=true;
+              state.coins+=5;
+              gainExp(3);
+              showHint('🔱 長槍でアーチャー撃破!');
+            }
+          }
+        }
+        for (const c of entities.cacti) {
+          if (!c.dead && hit(c)) {
+            c.hp -= 2;
+            hitSomething = true;
+            if (c.hp<=0) {
+              c.dead=true;
+              state.coins+=4;
+              gainExp(2);
+              showHint('🔱 長槍でサボテンモンスター撃破!');
+            }
+          }
+        }
+        for (const w of entities.snowwolves) {
+          if (!w.dead && hit(w)) {
+            w.hp -= 2;
+            hitSomething = true;
+            if (w.hp<=0) {
+              w.dead=true;
+              state.coins+=4;
+              gainExp(3);
+              showHint('🔱 長槍で雪オオカミ撃破!');
+            }
+          }
+        }
+        for (const sc of entities.scorpions) {
+          if (!sc.dead && hit(sc)) {
+            sc.hp -= 2;
+            hitSomething = true;
+            if (sc.hp<=0) {
+              sc.dead=true;
+              state.coins+=5;
+              gainExp(3);
+              showHint('🔱 長槍でサソリ撃破!');
+            }
+          }
+        }
+        for (const k of entities.krakens) {
+          if (!k.dead && hit(k)) {
+            k.hp -= 2;
+            hitSomething = true;
+            if (k.hp<=0) {
+              k.dead=true;
+              state.coins+=6;
+              gainExp(4);
+              showHint('🔱 長槍でクラーケン撃破!');
+            }
+          }
+        }
+        for (const f of entities.firespirits) {
+          if (!f.dead && hit(f)) {
+            f.hp -= 2;
+            hitSomething = true;
+            if (f.hp<=0) {
+              f.dead=true;
+              state.coins+=4;
+              gainExp(2);
+              showHint('🔱 長槍で炎の精霊撃破!');
+            }
+          }
+        }
+        // ボスにも当たる
+        for (const boss of entities.bosses) {
+          if (!boss.dead && hit(boss)) {
+            boss.hp -= 2;
+            hitSomething = true;
+            if (boss.hp <= 0) {
+              boss.dead = true;
+              const items = {
+                'suzaku': '村長の杖',
+                'genbu': '村長のメガネ',
+                'seiryu': '村長の証明書',
+                'kirin': '村長のハンカチ'
+              };
+              const itemName = items[boss.type];
+              if (itemName && !state.bossItems.includes(itemName)) {
+                state.bossItems.push(itemName);
+                showHint(`🎁 アイテムを手に入れた：${itemName}`, 3.0);
+                Sound.playSound('level');
+                
+                // 4つ揃ったかチェック
+                if (state.bossItems.length === 4) {
+                  setTimeout(() => {
+                    showChiefEvent();
+                  }, 1000);
+                }
+              }
+              state.coins += 50;
+              gainExp(10);
+              const bossNames = {
+                'suzaku': '朱雀',
+                'genbu': '玄武',
+                'seiryu': '青龍',
+                'kirin': '麒麟'
+              };
+              showHint(`💀 ${bossNames[boss.type]}撃破！`, 3.0);
+            }
+          }
+        }
+        
+        if (hitSomething) {
+          Sound.playSound('hit');
+        }
+        
+        showHint('🔱 長槍');
+        cooldown = 0.25; // 槍のクールダウン
+        break;
+      
+      case 'bazooka':
+        if (rockets.length >= 2) return;
+        const bDirX = Math.sign(Input.ax || player.dir) || player.dir;
+        const bDirY = Math.sign(Input.ay || 0) || 0;
+        if (bDirX === 0 && bDirY === 0) bDirY = 1;
+        const bSpeed = 100;
+        rockets.push(new Rocket(player.x, player.y, bDirX * bSpeed, bDirY * bSpeed));
+        Sound.playSound('bomb');
+        showHint('🚀 バズーカ発射');
+        cooldown = 0.4; // バズーカは重いので長め
+        break;
+    }
+    
+    // 硬直時間を設定
+    player.weaponCd = cooldown;
   }
 
   function hitPlayer(dmg) {
@@ -1751,6 +2662,12 @@
     player.hp=player.maxHp;
     state.hp=player.hp;
     arrows.length = 0; // 矢をクリア
+    shurikens.length = 0; // 手裏剣をクリア
+    spears.length = 0; // 長槍をクリア
+    rockets.length = 0; // ロケットをクリア
+    fragments.length = 0; // 破片をクリア
+    bombs.length = 0; // 爆弾をクリア
+    blasts.length = 0; // 爆発をクリア
     hideSpeechBubble();
     justRespawned = true; // リスポーン直後フラグを立てる
     showHint('🏠 村に戻りました');
@@ -2180,6 +3097,17 @@
         ctx.fillRect(c.x-10, c.y-8, 2, 2);
         ctx.fillRect(c.x+8, c.y-8, 2, 2);
         ctx.fillRect(c.x, c.y-10, 2, 2);
+        
+        // 武器が入っている場合はアイコンを表示
+        if (c.weapon) {
+          const weapon = WEAPONS[c.weapon.toUpperCase()];
+          if (weapon) {
+            ctx.fillStyle = weapon.color;
+            ctx.font = '12px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(weapon.icon, c.x, c.y - 16);
+          }
+        }
       }
     }
 
@@ -2236,6 +3164,179 @@
       ctx.restore();
     }
 
+    // 手裏剣（くるくる回転、手裏剣のデザイン）
+    for (const s of shurikens) {
+      ctx.save();
+      ctx.translate(s.x, s.y);
+      ctx.rotate(s.rot); // 高速回転
+      
+      // 光る効果
+      const glowTime = performance.now() * 0.02;
+      const glow = Math.sin(glowTime) * 0.3 + 0.7;
+      
+      // 外側の光
+      ctx.shadowBlur = 8;
+      ctx.shadowColor = '#ffd700';
+      
+      // 手裏剣のデザイン（4つの刃を持つ星型）
+      ctx.fillStyle = `rgba(200, 200, 200, ${glow})`; // 銀色
+      ctx.strokeStyle = '#ffd700'; // 金色の縁取り
+      ctx.lineWidth = 1.5;
+      
+      // 手裏剣の形状（4方向の刃）
+      const bladeLength = 6;
+      const bladeWidth = 2;
+      const centerHole = 1.5;
+      
+      ctx.beginPath();
+      // 4つの刃を描画
+      for (let i = 0; i < 4; i++) {
+        const angle = (i * Math.PI) / 2;
+        const x1 = Math.cos(angle) * bladeLength;
+        const y1 = Math.sin(angle) * bladeLength;
+        const x2 = Math.cos(angle + Math.PI / 4) * bladeWidth;
+        const y2 = Math.sin(angle + Math.PI / 4) * bladeWidth;
+        const x3 = Math.cos(angle - Math.PI / 4) * bladeWidth;
+        const y3 = Math.sin(angle - Math.PI / 4) * bladeWidth;
+        
+        if (i === 0) {
+          ctx.moveTo(x1, y1);
+        } else {
+          ctx.lineTo(x1, y1);
+        }
+        ctx.lineTo(x2, y2);
+        ctx.lineTo(0, 0);
+        ctx.lineTo(x3, y3);
+        ctx.lineTo(x1, y1);
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      
+      // 中心の穴
+      ctx.fillStyle = '#333';
+      ctx.beginPath();
+      ctx.arc(0, 0, centerHole, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // 中心の光
+      ctx.shadowBlur = 4;
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(0, 0, 0.8, 0, Math.PI * 2);
+      ctx.fill();
+      
+      ctx.restore();
+    }
+
+    // 長槍
+    for (const sp of spears) {
+      ctx.save();
+      const angle = Math.atan2(sp.vy, sp.vx);
+      ctx.translate(sp.x, sp.y);
+      ctx.rotate(angle);
+      
+      // 光る効果
+      const glowTime = performance.now() * 0.015;
+      const glow = Math.sin(glowTime) * 0.2 + 0.8;
+      
+      // 槍の柄（長く）
+      ctx.fillStyle = '#8b4513';
+      ctx.fillRect(-4, -1, 28, 2);
+      
+      // 槍の先（尖った表現、長く）
+      ctx.shadowBlur = 6;
+      ctx.shadowColor = '#4a90e2';
+      ctx.fillStyle = `rgba(74, 144, 226, ${glow})`;
+      // 先端をより尖らせる
+      ctx.beginPath();
+      ctx.moveTo(24, 0);
+      ctx.lineTo(30, -3);
+      ctx.lineTo(30, 3);
+      ctx.closePath();
+      ctx.fill();
+      
+      // 先端のさらに尖った部分
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.moveTo(28, 0);
+      ctx.lineTo(30, -1.5);
+      ctx.lineTo(30, 1.5);
+      ctx.closePath();
+      ctx.fill();
+      
+      // 槍の装飾（光る）
+      ctx.shadowBlur = 4;
+      ctx.shadowColor = '#ffd700';
+      ctx.fillStyle = `rgba(255, 215, 0, ${glow})`;
+      ctx.fillRect(-4, -2, 2, 4);
+      
+      // 軌跡エフェクト
+      ctx.globalAlpha = 0.3;
+      ctx.fillStyle = '#4a90e2';
+      ctx.fillRect(-4, -1, 20, 2);
+      ctx.globalAlpha = 1.0;
+      
+      ctx.restore();
+    }
+
+    // バズーカのロケット
+    for (const r of rockets) {
+      ctx.save();
+      const angle = Math.atan2(r.vy, r.vx);
+      ctx.translate(r.x, r.y);
+      ctx.rotate(angle);
+      
+      // 炎のエフェクト（後ろから）
+      const flameTime = performance.now() * 0.05;
+      const flameSize = Math.sin(flameTime) * 2 + 4;
+      ctx.fillStyle = '#ff6600';
+      ctx.beginPath();
+      ctx.arc(-6, 0, flameSize, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#ffaa00';
+      ctx.beginPath();
+      ctx.arc(-6, 0, flameSize * 0.6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#ffff00';
+      ctx.beginPath();
+      ctx.arc(-6, 0, flameSize * 0.3, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // ロケット本体（光る）
+      const glowTime = performance.now() * 0.02;
+      const glow = Math.sin(glowTime) * 0.3 + 0.7;
+      ctx.shadowBlur = 8;
+      ctx.shadowColor = '#ff4500';
+      ctx.fillStyle = `rgba(255, 69, 0, ${glow})`;
+      ctx.fillRect(-3, -4, 8, 8);
+      
+      // ロケットの先端（光る）
+      ctx.shadowBlur = 6;
+      ctx.shadowColor = '#ff6600';
+      ctx.fillStyle = `rgba(255, 102, 0, ${glow})`;
+      ctx.beginPath();
+      ctx.moveTo(5, 0);
+      ctx.lineTo(8, -3);
+      ctx.lineTo(8, 3);
+      ctx.closePath();
+      ctx.fill();
+      
+      // 尾翼
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = '#cc3300';
+      ctx.fillRect(-3, -6, 2, 2);
+      ctx.fillRect(-3, 4, 2, 2);
+      
+      // 炎
+      ctx.fillStyle = '#ffaa00';
+      ctx.fillRect(-6, -2, 3, 4);
+      ctx.fillStyle = '#ffff00';
+      ctx.fillRect(-7, -1, 2, 2);
+      
+      ctx.restore();
+    }
+
     // 敵
     for (const s of entities.slimes){ 
       if (s.dead) continue; 
@@ -2266,39 +3367,267 @@
       drawCharacter(f.x, f.y, 'firespirit', f);
     }
 
+    // ボス
+    for (const boss of entities.bosses) {
+      if (boss.dead) continue;
+      
+      ctx.save();
+      ctx.translate(boss.x, boss.y);
+      
+      // ボスの描画（4倍の大きさ）
+      const size = 24;
+      ctx.fillStyle = boss.color;
+      
+      // ボスタイプごとの描画
+      switch(boss.type) {
+        case 'suzaku': // 朱雀（鳥）
+          ctx.fillStyle = '#ff0000';
+          ctx.fillRect(-size, -size, size*2, size*2);
+          // 翼
+          ctx.fillStyle = '#ff6600';
+          ctx.fillRect(-size*1.5, -size*0.5, size, size);
+          ctx.fillRect(size*0.5, -size*0.5, size, size);
+          // 頭
+          ctx.fillStyle = '#ffaa00';
+          ctx.fillRect(-size*0.3, -size*1.2, size*0.6, size*0.6);
+          break;
+        case 'genbu': // 玄武（亀）
+          ctx.fillStyle = '#000080';
+          ctx.fillRect(-size, -size, size*2, size*2);
+          // 甲羅
+          ctx.fillStyle = '#004080';
+          ctx.fillRect(-size*0.7, -size*0.7, size*1.4, size*1.4);
+          // 頭
+          ctx.fillStyle = '#000040';
+          ctx.fillRect(-size*0.5, -size*1.3, size, size*0.6);
+          break;
+        case 'seiryu': // 青龍（龍）
+          ctx.fillStyle = '#00ffff';
+          ctx.fillRect(-size, -size, size*2, size*2);
+          // 体のうねり
+          ctx.fillStyle = '#0088ff';
+          for (let i = 0; i < 3; i++) {
+            ctx.fillRect(-size + i*size*0.7, -size*0.3, size*0.5, size*0.6);
+          }
+          // 頭
+          ctx.fillStyle = '#00aaff';
+          ctx.fillRect(-size*0.5, -size*1.2, size, size*0.8);
+          break;
+        case 'kirin': // 麒麟（鹿）
+          ctx.fillStyle = '#ffd700';
+          ctx.fillRect(-size, -size, size*2, size*2);
+          // 角
+          ctx.fillStyle = '#ffaa00';
+          ctx.fillRect(-size*0.3, -size*1.3, size*0.2, size*0.4);
+          ctx.fillRect(size*0.1, -size*1.3, size*0.2, size*0.4);
+          // 体の模様
+          ctx.fillStyle = '#ffaa00';
+          ctx.fillRect(-size*0.3, -size*0.3, size*0.6, size*0.6);
+          break;
+      }
+      
+      ctx.restore();
+      
+      // 体力バー
+      const barWidth = boss.w;
+      const barHeight = 4;
+      const barX = boss.x - barWidth / 2;
+      const barY = boss.y + boss.h / 2 + 8;
+      
+      // 背景
+      ctx.fillStyle = '#333';
+      ctx.fillRect(barX, barY, barWidth, barHeight);
+      
+      // 体力
+      const hpRatio = boss.hp / boss.maxHp;
+      ctx.fillStyle = hpRatio > 0.5 ? '#00ff00' : hpRatio > 0.25 ? '#ffff00' : '#ff0000';
+      ctx.fillRect(barX, barY, barWidth * hpRatio, barHeight);
+      
+      // 枠
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(barX, barY, barWidth, barHeight);
+      
+      // ボスの弾
+      for (const bullet of boss.bullets) {
+        ctx.fillStyle = bullet.color;
+        ctx.beginPath();
+        ctx.arc(bullet.x, bullet.y, 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    
+    // 村長ボス
+    if (entities.chiefBoss && !entities.chiefBoss.dead) {
+      ctx.save();
+      ctx.translate(entities.chiefBoss.x, entities.chiefBoss.y);
+      ctx.scale(entities.chiefBoss.scale, entities.chiefBoss.scale);
+      
+      // 村長の描画（派手な色）
+      if (entities.chiefBoss.phase === 3) {
+        // 本気モード：原色の派手な色
+        const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff'];
+        ctx.fillStyle = colors[Math.floor(entities.chiefBoss.animT * 5) % colors.length];
+      } else {
+        ctx.fillStyle = '#6b4423';
+      }
+      
+      const size = 12;
+      ctx.fillRect(-size, -size, size*2, size*2);
+      
+      // 頭
+      ctx.fillStyle = '#fdbcb4';
+      ctx.fillRect(-size*0.8, -size*1.2, size*1.6, size*0.8);
+      
+      // 帽子
+      ctx.fillStyle = '#4a4a4a';
+      ctx.fillRect(-size*0.8, -size*1.4, size*1.6, size*0.3);
+      
+      // ひげ
+      ctx.fillStyle = '#ddd';
+      ctx.fillRect(-size*0.6, -size*0.4, size*1.2, size*0.4);
+      
+      ctx.restore();
+      
+      // 体力バー
+      const barWidth = entities.chiefBoss.w;
+      const barHeight = 4;
+      const barX = entities.chiefBoss.x - barWidth / 2;
+      const barY = entities.chiefBoss.y + entities.chiefBoss.h / 2 + 8;
+      
+      ctx.fillStyle = '#333';
+      ctx.fillRect(barX, barY, barWidth, barHeight);
+      
+      const hpRatio = entities.chiefBoss.hp / entities.chiefBoss.maxHp;
+      ctx.fillStyle = hpRatio > 0.5 ? '#00ff00' : hpRatio > 0.25 ? '#ffff00' : '#ff0000';
+      ctx.fillRect(barX, barY, barWidth * hpRatio, barHeight);
+      
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(barX, barY, barWidth, barHeight);
+      
+      // 村長の弾
+      for (const bullet of entities.chiefBoss.bullets) {
+        ctx.fillStyle = bullet.color;
+        ctx.beginPath();
+        ctx.arc(bullet.x, bullet.y, 5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
     // プレイヤー
     drawCharacter(player.x, player.y, 'player', player);
+    
+    // 武器使用中のエフェクト（硬直中の視覚効果）
+    if (player.weaponCd > 0) {
+      ctx.save();
+      ctx.globalAlpha = 0.5;
+      
+      // 武器使用中の光るエフェクト
+      const effectTime = performance.now() * 0.01;
+      const pulse = Math.sin(effectTime * 10) * 0.3 + 0.7;
+      
+      // プレイヤーの周りに光る円
+      ctx.strokeStyle = `rgba(255, 255, 0, ${pulse})`;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(player.x, player.y, 12, 0, Math.PI * 2);
+      ctx.stroke();
+      
+      // 内側の光
+      ctx.strokeStyle = `rgba(255, 200, 0, ${pulse * 0.5})`;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(player.x, player.y, 10, 0, Math.PI * 2);
+      ctx.stroke();
+      
+      // 武器アイコンを表示
+      const weapon = WEAPONS[state.currentWeapon.toUpperCase()];
+      if (weapon) {
+        ctx.fillStyle = weapon.color;
+        ctx.font = '16px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(weapon.icon, player.x, player.y - 20);
+      }
+      
+      ctx.restore();
+    }
 
-    // 剣
+    // 剣/槍
     if (player.swordT > 0){
       const alpha = clamp(player.swordT / 0.18, 0, 1);
       ctx.save();
       ctx.globalAlpha = alpha;
       
       const dx = player.sdx, dy = player.sdy;
-      const swordLength = 16;
-      const swordWidth = 4;
+      const isSpear = state.currentWeapon === 'spear';
+      const baseLength = 16;
+      const weaponLength = isSpear ? baseLength * 2 : baseLength; // 槍は2倍の長さ
+      const weaponWidth = isSpear ? 3 : 4;
       
       ctx.translate(player.x, player.y);
       ctx.rotate(Math.atan2(dy, dx));
       
-      // 剣身
-      ctx.fillStyle = '#e8e8e8';
-      ctx.fillRect(8, -swordWidth/2, swordLength, swordWidth);
-      
-      // 剣先
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(8 + swordLength - 2, -1, 2, 2);
-      
-      // 柄
-      ctx.fillStyle = '#8b4513';
-      ctx.fillRect(4, -2, 6, 4);
-      
-      // ツバ
-      ctx.fillStyle = '#666';
-      ctx.fillRect(8, -3, 2, 6);
+      if (isSpear) {
+        // 槍の描画
+        // 槍の柄
+        ctx.fillStyle = '#8b4513';
+        ctx.fillRect(4, -1, weaponLength * 0.7, 2);
+        
+        // 槍の先（尖った表現、長く）
+        const glowTime = performance.now() * 0.015;
+        const glow = Math.sin(glowTime) * 0.2 + 0.8;
+        ctx.shadowBlur = 6;
+        ctx.shadowColor = '#4a90e2';
+        ctx.fillStyle = `rgba(74, 144, 226, ${glow})`;
+        ctx.beginPath();
+        ctx.moveTo(4 + weaponLength * 0.7, 0);
+        ctx.lineTo(4 + weaponLength, -3);
+        ctx.lineTo(4 + weaponLength, 3);
+        ctx.closePath();
+        ctx.fill();
+        
+        // 先端のさらに尖った部分
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.moveTo(4 + weaponLength * 0.85, 0);
+        ctx.lineTo(4 + weaponLength, -1.5);
+        ctx.lineTo(4 + weaponLength, 1.5);
+        ctx.closePath();
+        ctx.fill();
+      } else {
+        // 剣の描画
+        // 剣身
+        ctx.fillStyle = '#e8e8e8';
+        ctx.fillRect(8, -weaponWidth/2, weaponLength, weaponWidth);
+        
+        // 剣先
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(8 + weaponLength - 2, -1, 2, 2);
+        
+        // 柄
+        ctx.fillStyle = '#8b4513';
+        ctx.fillRect(4, -2, 6, 4);
+        
+        // ツバ
+        ctx.fillStyle = '#666';
+        ctx.fillRect(8, -3, 2, 6);
+      }
       
       ctx.restore();
+    }
+    
+    // バズーカの破片
+    if (typeof fragments !== 'undefined') {
+      for (const frag of fragments) {
+        ctx.save();
+        ctx.fillStyle = '#ff6600';
+        ctx.beginPath();
+        ctx.arc(frag.x, frag.y, 2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
     }
     
     // ミニマップを描画
@@ -2307,15 +3636,25 @@
 
   // 更新
   function update(dt) {
-    // 入力
+    // 武器使用中の硬直時間を更新
+    if (player.weaponCd > 0) {
+      player.weaponCd -= dt;
+    }
+    
+    // 入力（武器使用中は移動できない）
     const speed = player.speed;
-    player.vx = Input.ax * speed; 
-    player.vy = Input.ay * speed;
+    if (player.weaponCd <= 0) {
+      player.vx = Input.ax * speed; 
+      player.vy = Input.ay * speed;
+    } else {
+      // 硬直中は移動を停止
+      player.vx = 0;
+      player.vy = 0;
+    }
     if (Math.abs(Input.ax) > 0.1) player.dir = Math.sign(Input.ax);
 
-    // 攻撃・爆弾
+    // 攻撃
     if (Input.aDown) attack();
-    if (Input.xDown) placeBomb();
 
     if (player.attackCd>0) player.attackCd-=dt;
     if (player.inv>0) player.inv-=dt;
@@ -2330,6 +3669,12 @@
       currentMapX--;
       player.x = W - 10;
       arrows.length = 0; // 矢をクリア
+      shurikens.length = 0; // 手裏剣をクリア
+      spears.length = 0; // 長槍をクリア
+      rockets.length = 0; // ロケットをクリア
+      fragments.length = 0; // 破片をクリア
+      bombs.length = 0; // 爆弾をクリア
+      blasts.length = 0; // 爆発をクリア
       hideSpeechBubble();
       markMapVisited(currentMapX, currentMapY); // 新しいマップを訪問済みに
       Sound.playSound('button'); // マップ切り替え音
@@ -2390,8 +3735,8 @@
       }
     }
     
-    if (canTalk) showHint('💬 Bで話す'); 
-    else if (canOpen) showHint('📦 Bで開ける');
+    if (canTalk) showHint('💬 Xで話す'); 
+    else if (canOpen) showHint('📦 Xで開ける');
     
     if (Input.bDown){
       if (canTalk){ 
@@ -2418,15 +3763,36 @@
           }
         }
       }
-      else if (canOpen){ 
-        const chest = entities.chests.find(c=>!c.opened && near(c,20)); 
-        if (chest){ 
-          chest.opened = true; 
-          const reward = 10 + state.level * 2;
-          state.coins += reward; 
-          gainExp(3);
-          Sound.playSound('chest'); 
-          showHint(`📦 宝箱から+${reward}💰`); 
+    }
+    
+    // Xボタンの処理（宝箱を開く処理を優先、なければ武器使用）
+    if (Input.xDown) {
+      // ポーズ中でないことを確認
+      if (!state.paused && !state.ending) {
+        if (canOpen) {
+          // 宝箱を開く処理（優先）
+          const chest = entities.chests.find(c=>!c.opened && near(c,20)); 
+          if (chest){ 
+            chest.opened = true; 
+            
+            // 武器が入っている場合
+            if (chest.weapon && !state.weapons.includes(chest.weapon)) {
+              state.weapons.push(chest.weapon);
+              const weapon = WEAPONS[chest.weapon.toUpperCase()];
+              Sound.playSound('level');
+              showHint(`📦 ${weapon.icon} ${weapon.name}を入手！`, 3.0);
+            } else {
+              // 通常の報酬
+              const reward = 10 + state.level * 2;
+              state.coins += reward; 
+              gainExp(3);
+              Sound.playSound('chest'); 
+              showHint(`📦 宝箱から+${reward}💰`);
+            }
+          }
+        } else {
+          // 宝箱がない場合は武器使用
+          useWeapon();
         }
       }
     }
@@ -2527,6 +3893,158 @@
       if (dist2(f.x,f.y,player.x,player.y) < 15*15) hitPlayer(1); 
     }
 
+    // ボス
+    for (const boss of entities.bosses) {
+      if (boss.dead) continue;
+      boss.update(dt);
+      
+      // ボスの弾の更新
+      for (const bullet of boss.bullets) {
+        bullet.x += bullet.vx * dt;
+        bullet.y += bullet.vy * dt;
+        bullet.life -= dt;
+        
+        // 追尾弾の処理
+        if (bullet.tracking) {
+          const dx = player.x - bullet.x;
+          const dy = player.y - bullet.y;
+          const dist = Math.hypot(dx, dy);
+          if (dist > 0) {
+            bullet.vx = (dx / dist) * 50;
+            bullet.vy = (dy / dist) * 50;
+          }
+        }
+        
+        // プレイヤーとの衝突
+        if (dist2(bullet.x, bullet.y, player.x, player.y) < 10*10) {
+          hitPlayer(2);
+          bullet.life = 0;
+        }
+        
+        if (bullet.life <= 0 || collidesTile(bullet.x, bullet.y, 4, 4)) {
+          bullet.dead = true;
+        }
+      }
+      
+      // ボスの弾の後片付け
+      for (let i = boss.bullets.length - 1; i >= 0; i--) {
+        if (boss.bullets[i].dead || boss.bullets[i].life <= 0) {
+          boss.bullets.splice(i, 1);
+        }
+      }
+      
+      // プレイヤーの攻撃判定
+      if (player.swordT > 0) {
+        const range = 30;
+        const w = 20, h = 20;
+        const dirX = player.sdx || player.dir;
+        const dirY = player.sdy || 0;
+        const ax = player.x + dirX * range;
+        const ay = player.y + dirY * range;
+        
+        if (Math.abs(boss.x - ax) < w && Math.abs(boss.y - ay) < h) {
+          boss.hp -= 2;
+          Sound.playSound('hit');
+          if (boss.hp <= 0) {
+            boss.dead = true;
+            // アイテムを獲得
+            const items = {
+              'suzaku': '村長の杖',
+              'genbu': '村長のメガネ',
+              'seiryu': '村長の証明書',
+              'kirin': '村長のハンカチ'
+            };
+            const itemName = items[boss.type];
+            if (itemName && !state.bossItems.includes(itemName)) {
+              state.bossItems.push(itemName);
+              showHint(`🎁 アイテムを手に入れた：${itemName}`, 3.0);
+              Sound.playSound('level');
+              
+              // 4つ揃ったかチェック
+              if (state.bossItems.length === 4) {
+                setTimeout(() => {
+                  showChiefEvent();
+                }, 1000);
+              }
+            }
+            state.coins += 50;
+            gainExp(10);
+            showHint(`💀 ${boss.type === 'suzaku' ? '朱雀' : boss.type === 'genbu' ? '玄武' : boss.type === 'seiryu' ? '青龍' : '麒麟'}撃破！`, 3.0);
+          }
+        }
+      }
+      
+      // ボスとの接触ダメージ
+      if (dist2(boss.x, boss.y, player.x, player.y) < 30*30) {
+        hitPlayer(2);
+      }
+    }
+    
+    // 村長ボス
+    if (entities.chiefBoss && !entities.chiefBoss.dead) {
+      entities.chiefBoss.update(dt);
+      moveWithTile(entities.chiefBoss, dt);
+      
+      // 村長の弾の更新
+      for (const bullet of entities.chiefBoss.bullets) {
+        bullet.x += bullet.vx * dt;
+        bullet.y += bullet.vy * dt;
+        bullet.life -= dt;
+        
+        if (dist2(bullet.x, bullet.y, player.x, player.y) < 10*10) {
+          hitPlayer(3);
+          bullet.life = 0;
+        }
+        
+        if (bullet.life <= 0 || collidesTile(bullet.x, bullet.y, 5, 5)) {
+          bullet.dead = true;
+        }
+      }
+      
+      for (let i = entities.chiefBoss.bullets.length - 1; i >= 0; i--) {
+        if (entities.chiefBoss.bullets[i].dead || entities.chiefBoss.bullets[i].life <= 0) {
+          entities.chiefBoss.bullets.splice(i, 1);
+        }
+      }
+      
+      // プレイヤーの攻撃判定
+      if (player.swordT > 0) {
+        const range = 30;
+        const w = 20, h = 20;
+        const dirX = player.sdx || player.dir;
+        const dirY = player.sdy || 0;
+        const ax = player.x + dirX * range;
+        const ay = player.y + dirY * range;
+        
+        if (Math.abs(entities.chiefBoss.x - ax) < w && Math.abs(entities.chiefBoss.y - ay) < h) {
+          entities.chiefBoss.hp -= 3;
+          Sound.playSound('hit');
+          
+          // フェーズ遷移
+          if (entities.chiefBoss.phase === 1 && entities.chiefBoss.hp <= 50) {
+            entities.chiefBoss.phase = 2;
+            showSpeechBubble(entities.npcs[0], 'ならば力づくじゃな！');
+            Sound.playSound('level');
+          } else if (entities.chiefBoss.phase === 2 && entities.chiefBoss.hp <= 25) {
+            entities.chiefBoss.phase = 3;
+            showSpeechBubble(entities.npcs[0], 'そうか、本気をだすかのう！');
+            Sound.playSound('level');
+          }
+          
+          if (entities.chiefBoss.hp <= 0) {
+            entities.chiefBoss.dead = true;
+            state.ending = true;
+            showEnding();
+          }
+        }
+      }
+      
+      // 村長との接触ダメージ
+      if (dist2(entities.chiefBoss.x, entities.chiefBoss.y, player.x, player.y) < 25*25) {
+        hitPlayer(entities.chiefBoss.phase === 3 ? 4 : 2);
+      }
+    }
+
     // 矢
     for (const ar of arrows){ 
       ar.x += ar.vx*dt; 
@@ -2538,6 +4056,294 @@
         ar.dead=true; 
         hitPlayer(1);
       } 
+    }
+
+    // 手裏剣
+    for (const s of shurikens) {
+      s.x += s.vx * dt;
+      s.y += s.vy * dt;
+      s.rot += dt * 20; // 回転速度を上げる
+      s.life -= dt;
+      
+      if (collidesTile(s.x, s.y, 4, 4)) s.life = 0;
+      if (s.life <= 0) s.dead = true;
+      
+      const entities = getMapEntities();
+      const hit = (e) => Math.abs(e.x - s.x) < 8 && Math.abs(e.y - s.y) < 8;
+      
+      // 全ての敵タイプに当たり判定
+      const hitEnemy = (enemy, reward, exp, name) => {
+        if (!enemy.dead && hit(enemy)) {
+          enemy.hp--;
+          // 敵を吹っ飛ばす
+          const knockbackSpeed = 200;
+          const knockbackDirX = Math.sign(enemy.x - s.x) || 1;
+          const knockbackDirY = Math.sign(enemy.y - s.y) || 0;
+          enemy.vx = knockbackDirX * knockbackSpeed;
+          enemy.vy = knockbackDirY * knockbackSpeed;
+          enemy.knockbackT = 0.3; // ノックバック時間
+          s.life = 0;
+          if (enemy.hp <= 0) {
+            enemy.dead = true;
+            state.coins += reward;
+            gainExp(exp);
+            showHint(`⭐ 手裏剣で${name}撃破!`);
+          } else {
+            Sound.playSound('hit');
+          }
+        }
+      };
+      
+      for (const sl of entities.slimes) hitEnemy(sl, 3, 2, 'スライム');
+      for (const a of entities.archers) hitEnemy(a, 5, 3, 'アーチャー');
+      for (const c of entities.cacti) hitEnemy(c, 4, 2, 'サボテンモンスター');
+      for (const w of entities.snowwolves) hitEnemy(w, 4, 3, '雪オオカミ');
+      for (const sc of entities.scorpions) hitEnemy(sc, 5, 3, 'サソリ');
+      for (const k of entities.krakens) hitEnemy(k, 6, 4, 'クラーケン');
+      for (const f of entities.firespirits) hitEnemy(f, 4, 2, '炎の精霊');
+      // ボスにも当たる
+      for (const boss of entities.bosses) {
+        if (!boss.dead && hit(boss)) {
+          boss.hp--;
+          s.life = 0;
+          if (boss.hp <= 0) {
+            boss.dead = true;
+            const items = {
+              'suzaku': '村長の杖',
+              'genbu': '村長のメガネ',
+              'seiryu': '村長の証明書',
+              'kirin': '村長のハンカチ'
+            };
+            const itemName = items[boss.type];
+            if (itemName && !state.bossItems.includes(itemName)) {
+              state.bossItems.push(itemName);
+              showHint(`🎁 アイテムを手に入れた：${itemName}`, 3.0);
+              Sound.playSound('level');
+              if (state.bossItems.length === 4) {
+                setTimeout(() => showChiefEvent(), 1000);
+              }
+            }
+            state.coins += 50;
+            gainExp(10);
+            const bossNames = {
+              'suzaku': '朱雀',
+              'genbu': '玄武',
+              'seiryu': '青龍',
+              'kirin': '麒麟'
+            };
+            showHint(`💀 ${bossNames[boss.type]}撃破！`, 3.0);
+          }
+        }
+      }
+    }
+
+    // 長槍
+    for (const sp of spears) {
+      sp.x += sp.vx * dt;
+      sp.y += sp.vy * dt;
+      sp.rot += dt * 5;
+      sp.life -= dt;
+      
+      if (collidesTile(sp.x, sp.y, 8, 20)) sp.life = 0;
+      if (sp.life <= 0) sp.dead = true;
+      
+      const entities = getMapEntities();
+      const hit = (e) => Math.abs(e.x - sp.x) < 12 && Math.abs(e.y - sp.y) < 12;
+      
+      // 全ての敵タイプに当たり判定
+      const hitEnemy = (enemy, reward, exp, name) => {
+        if (!enemy.dead && hit(enemy)) {
+          enemy.hp -= 2;
+          sp.life = 0;
+          if (enemy.hp <= 0) {
+            enemy.dead = true;
+            state.coins += reward;
+            gainExp(exp);
+            showHint(`🔱 長槍で${name}撃破!`);
+          }
+        }
+      };
+      
+      for (const sl of entities.slimes) hitEnemy(sl, 3, 2, 'スライム');
+      for (const a of entities.archers) hitEnemy(a, 5, 3, 'アーチャー');
+      for (const c of entities.cacti) hitEnemy(c, 4, 2, 'サボテンモンスター');
+      for (const w of entities.snowwolves) hitEnemy(w, 4, 3, '雪オオカミ');
+      for (const sc of entities.scorpions) hitEnemy(sc, 5, 3, 'サソリ');
+      for (const k of entities.krakens) hitEnemy(k, 6, 4, 'クラーケン');
+      for (const f of entities.firespirits) hitEnemy(f, 4, 2, '炎の精霊');
+      // ボスにも当たる
+      for (const boss of entities.bosses) {
+        if (!boss.dead && hit(boss)) {
+          boss.hp -= 2;
+          sp.life = 0;
+          if (boss.hp <= 0) {
+            boss.dead = true;
+            const items = {
+              'suzaku': '村長の杖',
+              'genbu': '村長のメガネ',
+              'seiryu': '村長の証明書',
+              'kirin': '村長のハンカチ'
+            };
+            const itemName = items[boss.type];
+            if (itemName && !state.bossItems.includes(itemName)) {
+              state.bossItems.push(itemName);
+              showHint(`🎁 アイテムを手に入れた：${itemName}`, 3.0);
+              Sound.playSound('level');
+              if (state.bossItems.length === 4) {
+                setTimeout(() => showChiefEvent(), 1000);
+              }
+            }
+            state.coins += 50;
+            gainExp(10);
+            const bossNames = {
+              'suzaku': '朱雀',
+              'genbu': '玄武',
+              'seiryu': '青龍',
+              'kirin': '麒麟'
+            };
+            showHint(`💀 ${bossNames[boss.type]}撃破！`, 3.0);
+          }
+        }
+      }
+    }
+
+    // バズーカのロケット
+    for (const r of rockets) {
+      r.x += r.vx * dt;
+      r.y += r.vy * dt;
+      r.rot += dt * 3;
+      r.life -= dt;
+      
+      // 敵との衝突チェック（大爆発）
+      const entities = getMapEntities();
+      let hitEnemy = false;
+      const hitRect = (e) => Math.abs(e.x - r.x) < 15 && Math.abs(e.y - r.y) < 15;
+      
+      // 全ての敵タイプに当たり判定
+      for (const sl of entities.slimes) {
+        if (!sl.dead && hitRect(sl)) {
+          sl.dead = true;
+          hitEnemy = true;
+        }
+      }
+      for (const a of entities.archers) {
+        if (!a.dead && hitRect(a)) {
+          a.dead = true;
+          hitEnemy = true;
+        }
+      }
+      for (const c of entities.cacti) {
+        if (!c.dead && hitRect(c)) {
+          c.dead = true;
+          hitEnemy = true;
+        }
+      }
+      for (const w of entities.snowwolves) {
+        if (!w.dead && hitRect(w)) {
+          w.dead = true;
+          hitEnemy = true;
+        }
+      }
+      for (const sc of entities.scorpions) {
+        if (!sc.dead && hitRect(sc)) {
+          sc.dead = true;
+          hitEnemy = true;
+        }
+      }
+      for (const k of entities.krakens) {
+        if (!k.dead && hitRect(k)) {
+          k.dead = true;
+          hitEnemy = true;
+        }
+      }
+      for (const f of entities.firespirits) {
+        if (!f.dead && hitRect(f)) {
+          f.dead = true;
+          hitEnemy = true;
+        }
+      }
+      // ボスにも当たる
+      for (const boss of entities.bosses) {
+        if (!boss.dead && hitRect(boss)) {
+          boss.hp -= 10;
+          hitEnemy = true;
+          if (boss.hp <= 0) boss.dead = true;
+        }
+      }
+      
+      if (hitEnemy || collidesTile(r.x, r.y, 6, 12) || r.life <= 0) {
+        // 大爆発（中心の爆発）
+        blasts.push(new Explosion(r.x, r.y));
+        Sound.playSound('bomb');
+        r.dead = true;
+        
+        // 4方向に破片を散らす
+        const fragmentSpeed = 120;
+        fragments.push(new Fragment(r.x, r.y, fragmentSpeed, 0)); // 右
+        fragments.push(new Fragment(r.x, r.y, -fragmentSpeed, 0)); // 左
+        fragments.push(new Fragment(r.x, r.y, 0, fragmentSpeed)); // 下
+        fragments.push(new Fragment(r.x, r.y, 0, -fragmentSpeed)); // 上
+        
+        const entities = getMapEntities();
+        const hitRect = (e) => Math.abs(e.x - r.x) < TS * 1.5 && Math.abs(e.y - r.y) < TS * 1.5;
+        
+        // 全ての敵タイプに当たり判定（3ダメージ）
+        const hitEnemy = (enemy, reward, exp, name) => {
+          if (!enemy.dead && hitRect(enemy)) {
+            enemy.hp -= 3; // 3ダメージ
+            if (enemy.hp <= 0) {
+              enemy.dead = true;
+              state.coins += reward;
+              gainExp(exp);
+              showHint(`🚀 バズーカで${name}撃破!`);
+            } else {
+              Sound.playSound('hit');
+            }
+          }
+        };
+        
+        for (const sl of entities.slimes) hitEnemy(sl, 3, 2, 'スライム');
+        for (const a of entities.archers) hitEnemy(a, 5, 3, 'アーチャー');
+        for (const c of entities.cacti) hitEnemy(c, 4, 2, 'サボテンモンスター');
+        for (const w of entities.snowwolves) hitEnemy(w, 4, 3, '雪オオカミ');
+        for (const sc of entities.scorpions) hitEnemy(sc, 5, 3, 'サソリ');
+        for (const k of entities.krakens) hitEnemy(k, 6, 4, 'クラーケン');
+        for (const f of entities.firespirits) hitEnemy(f, 4, 2, '炎の精霊');
+        // ボスにも当たる
+        for (const boss of entities.bosses) {
+          if (!boss.dead && hitRect(boss)) {
+            boss.hp -= 3; // 3ダメージ
+            if (boss.hp <= 0) {
+              boss.dead = true;
+              const items = {
+                'suzaku': '村長の杖',
+                'genbu': '村長のメガネ',
+                'seiryu': '村長の証明書',
+                'kirin': '村長のハンカチ'
+              };
+              const itemName = items[boss.type];
+              if (itemName && !state.bossItems.includes(itemName)) {
+                state.bossItems.push(itemName);
+                showHint(`🎁 ${itemName}を獲得！`, 3.0);
+                Sound.playSound('level');
+                if (state.bossItems.length === 4) {
+                  setTimeout(() => showChiefEvent(), 1000);
+                }
+              }
+              state.coins += 50;
+              gainExp(10);
+              const bossNames = {
+                'suzaku': '朱雀',
+                'genbu': '玄武',
+                'seiryu': '青龍',
+                'kirin': '麒麟'
+              };
+              showHint(`💀 ${bossNames[boss.type]}撃破！`, 3.0);
+            }
+          }
+        }
+        if (hitRect(player)) hitPlayer(2);
+      }
     }
 
     // 爆弾
@@ -2606,6 +4412,39 @@
             showHint('💥 爆弾で炎の精霊撃破!'); 
           } 
         }
+        // ボスにも当たる
+        for (const boss of bombEntities.bosses) {
+          if (!boss.dead && hitRect(boss)) {
+            boss.hp -= 10;
+            if (boss.hp <= 0) {
+              boss.dead = true;
+              const items = {
+                'suzaku': '村長の杖',
+                'genbu': '村長のメガネ',
+                'seiryu': '村長の証明書',
+                'kirin': '村長のハンカチ'
+              };
+              const itemName = items[boss.type];
+              if (itemName && !state.bossItems.includes(itemName)) {
+                state.bossItems.push(itemName);
+                showHint(`🎁 ${itemName}を獲得！`, 3.0);
+                Sound.playSound('level');
+                if (state.bossItems.length === 4) {
+                  setTimeout(() => showChiefEvent(), 1000);
+                }
+              }
+              state.coins += 50;
+              gainExp(10);
+              const bossNames = {
+                'suzaku': '朱雀',
+                'genbu': '玄武',
+                'seiryu': '青龍',
+                'kirin': '麒麟'
+              };
+              showHint(`💀 ${bossNames[boss.type]}撃破！`, 3.0);
+            }
+          }
+        }
         if (hitRect(player)) hitPlayer(2);
       } 
     }
@@ -2616,13 +4455,17 @@
     }
     for (const ex of blasts){ ex.t-=dt; }
     for (let i=arrows.length-1;i>=0;i--) if (arrows[i].dead) arrows.splice(i,1);
+    for (let i=shurikens.length-1;i>=0;i--) if (shurikens[i].dead || shurikens[i].life<=0) shurikens.splice(i,1);
+    for (let i=spears.length-1;i>=0;i--) if (spears[i].dead || spears[i].life<=0) spears.splice(i,1);
+    for (let i=rockets.length-1;i>=0;i--) if (rockets[i].dead || rockets[i].life<=0) rockets.splice(i,1);
+    for (let i=fragments.length-1;i>=0;i--) if (fragments[i].dead || fragments[i].life<=0) fragments.splice(i,1);
     for (let i=blasts.length-1;i>=0;i--) if (blasts[i].t<=0) blasts.splice(i,1);
 
     // チュートリアル
     tutorialTick(dt, { 
       moved: (Math.abs(Input.ax)+Math.abs(Input.ay))>0.5, 
       attacked: Input.aDown, 
-      opened: (Input.bDown && canOpen), 
+      opened: (Input.xDown && canOpen), 
       talked: (Input.bDown && canTalk)
     });
 
@@ -2653,7 +4496,7 @@
     last = t; 
     dt = Math.min(dt, 0.05);
 
-    if (!state.paused){
+    if (!state.paused && !state.ending){
       acc += dt; 
       while (acc >= FIXED){ 
         Input.updateEdges(); 
@@ -2661,6 +4504,9 @@
         acc -= FIXED; 
         Input.aDown=Input.bDown=Input.xDown=false; 
       }
+      draw();
+    } else if (state.ending) {
+      // エンディング中は描画のみ
       draw();
     }
     requestAnimationFrame(loop);
@@ -2711,18 +4557,153 @@
   tutSkip.addEventListener('click', ()=> { tut.close(); Sound.playSound('button'); });
   setTimeout(tutorialOpen, 800);
 
-  // ポーズ
-  const pause = document.getElementById('pause');
+  // 武器切り替え
+  const weaponSelect = document.getElementById('weaponSelect');
+  const weaponList = document.getElementById('weaponList');
   const btnPause = document.getElementById('btnPause');
-  const btnClose = document.getElementById('btnClose');
+  const btnCloseWeapon = document.getElementById('btnCloseWeapon');
 
-  function togglePause(){
-    state.paused = !state.paused;
-    if (state.paused){ pause.showModal(); } else { pause.close(); }
+  function renderWeaponList() {
+    weaponList.innerHTML = '';
+    state.weapons.forEach(weaponId => {
+      const weapon = Object.values(WEAPONS).find(w => w.id === weaponId);
+      if (!weapon) return;
+      
+      const isEquipped = state.currentWeapon === weaponId;
+      const item = document.createElement('div');
+      item.style.cssText = `
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px;
+        margin: 8px 0;
+        background: ${isEquipped ? 'rgba(139,211,255,0.2)' : 'var(--panel)'};
+        border: 2px solid ${isEquipped ? 'var(--accent)' : 'var(--outline)'};
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      `;
+      
+      item.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <span style="font-size: 24px;">${weapon.icon}</span>
+          <span style="font-weight: 700;">${weapon.name}</span>
+        </div>
+        ${isEquipped ? '<span style="color: var(--accent); font-weight: 800;">装備中</span>' : ''}
+      `;
+      
+      // 装備済みでもクリック可能（ダイアログを閉じるため）
+      item.addEventListener('click', () => {
+        if (!isEquipped) {
+          state.currentWeapon = weaponId;
+          renderWeaponList();
+          updateWeaponButton();
+        }
+        Sound.playSound('button');
+        // 武器選択後、即座にダイアログを閉じてポーズを解除
+        weaponSelect.close();
+        // 確実にポーズを解除（即座に実行）
+        state.paused = false;
+      });
+      
+      weaponList.appendChild(item);
+    });
   }
 
-  btnPause.addEventListener('click', ()=> { togglePause(); Sound.playSound('button'); });
-  btnClose.addEventListener('click', ()=> { togglePause(); Sound.playSound('button'); });
+  function updateWeaponButton() {
+    const weapon = Object.values(WEAPONS).find(w => w.id === state.currentWeapon);
+    if (weapon) {
+      const weaponIcon = document.getElementById('weaponIcon');
+      if (weaponIcon) {
+        weaponIcon.textContent = weapon.icon;
+      }
+      btnX.title = weapon.name;
+    }
+  }
+
+  function toggleWeaponSelect(){
+    if (state.ending) return; // エンディング中は無効
+    
+    state.paused = !state.paused;
+    if (state.paused){ 
+      renderWeaponList();
+      weaponSelect.showModal(); 
+    } else { 
+      weaponSelect.close(); 
+      state.paused = false; // 確実にポーズを解除
+    }
+  }
+  
+  // ダイアログが閉じられた時にポーズを解除
+  weaponSelect.addEventListener('close', () => {
+    state.paused = false;
+  });
+
+  btnPause.addEventListener('click', ()=> { toggleWeaponSelect(); Sound.playSound('button'); });
+  if (btnPauseLandscape) {
+    btnPauseLandscape.addEventListener('click', ()=> { toggleWeaponSelect(); Sound.playSound('button'); });
+  }
+  btnCloseWeapon.addEventListener('click', ()=> { toggleWeaponSelect(); Sound.playSound('button'); });
+
+  // 村長イベント
+  const chiefEvent = document.getElementById('chiefEvent');
+  const chiefEventContent = document.getElementById('chiefEventContent');
+  const btnChiefYes = document.getElementById('btnChiefYes');
+  const btnChiefNo = document.getElementById('btnChiefNo');
+
+  function showChiefEvent() {
+    state.paused = true;
+    chiefEventContent.innerHTML = `
+      <p style="margin: 0 0 16px 0;">わしの代わりに村長になるか、相談される。</p>
+      <p style="margin: 0 0 16px 0;">4つのアイテムを集めた勇者よ、</p>
+      <p style="margin: 0;">この村を守ってくれるか？</p>
+    `;
+    chiefEvent.showModal();
+  }
+
+  btnChiefYes.addEventListener('click', () => {
+    chiefEvent.close();
+    showEnding('勇者は村長として働くことになった。\n\n村は平和になり、\n人々は幸せに暮らした。');
+    Sound.playSound('level');
+  });
+
+  btnChiefNo.addEventListener('click', () => {
+    chiefEvent.close();
+    state.paused = false;
+    // 村長ボスを出現
+    const entities = getMapEntities();
+    if (entities.npcs.length > 0) {
+      const npc = entities.npcs[0];
+      entities.chiefBoss = new VillageChiefBoss(npc.x, npc.y);
+      showSpeechBubble(npc, 'ならば力づくじゃな！');
+      Sound.playSound('bomb');
+    }
+  });
+
+  // エンディング
+  const endingDialog = document.getElementById('ending');
+  const endingContent = document.getElementById('endingContent');
+  const btnEndingClose = document.getElementById('btnEndingClose');
+
+  function showEnding(text = '') {
+    state.paused = true;
+    state.ending = true;
+    
+    if (!text) {
+      text = '村長を倒した勇者は、\n\n真の力を手に入れた。\n\n村は新たな時代を迎えた...';
+    }
+    
+    endingContent.innerHTML = `<p style="white-space: pre-line; text-align: center; font-size: 18px; line-height: 1.8;">${text}</p>`;
+    endingDialog.showModal();
+  }
+
+  btnEndingClose.addEventListener('click', () => {
+    endingDialog.close();
+    Sound.playSound('button');
+  });
+  
+  // 初期化
+  updateWeaponButton();
 
   // 初期化
   markMapVisited(currentMapX, currentMapY); // 初期マップを訪問済みに
