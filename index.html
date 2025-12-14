@@ -18,6 +18,7 @@
     --gold: #ffd56c;
     --btn-size: 64px;
     --font-scale: 1;
+    --landscape-scale: 1; /* デフォルト値（縦画面時） */
   }
 
   html, body { height: 100%; margin: 0; }
@@ -292,8 +293,19 @@
     image-rendering: pixelated;
   }
 
-  /* 横画面時のレイアウト */
+  /* 横画面時のレイアウト - 高さに応じたスケール調整 */
+  @media (orientation: landscape) and (max-height: 400px) {
+    --landscape-scale: 0.6;
+  }
+  @media (orientation: landscape) and (min-height: 401px) and (max-height: 500px) {
+    --landscape-scale: 0.7;
+  }
+  @media (orientation: landscape) and (min-height: 501px) and (max-height: 600px) {
+    --landscape-scale: 0.8;
+  }
+  
   @media (orientation: landscape) and (max-height: 600px) {
+    
     .stage {
       width: 100vw;
       height: 100vh;
@@ -306,8 +318,13 @@
 
     #game {
       flex: 1;
-      max-width: calc(100vw - 400px);
-      height: 100%;
+      /* 16:9のアスペクト比を維持しつつ、画面の高さに収まるように */
+      --game-padding: calc(32px * var(--landscape-scale));
+      height: calc(100vh - var(--game-padding));
+      max-height: calc(100vh - var(--game-padding));
+      width: calc((100vh - var(--game-padding)) * 16 / 9);
+      max-width: calc(100vw - calc(400px * var(--landscape-scale)));
+      object-fit: contain;
     }
 
     .hud {
@@ -318,6 +335,7 @@
       align-items: center;
       justify-content: space-between;
       pointer-events: none;
+      font-size: calc(14px * var(--landscape-scale));
     }
 
     .minimap {
@@ -327,10 +345,10 @@
     .minimap-landscape {
       display: block !important;
       position: absolute;
-      top: 8px;
-      left: 8px;
-      width: 90px;
-      height: 90px;
+      top: calc(8px * var(--landscape-scale));
+      left: calc(8px * var(--landscape-scale));
+      width: calc(90px * var(--landscape-scale));
+      height: calc(90px * var(--landscape-scale));
       margin: 0;
       pointer-events: auto;
     }
@@ -343,10 +361,10 @@
       display: flex !important;
       flex-direction: column;
       align-items: flex-end;
-      gap: 8px;
+      gap: calc(8px * var(--landscape-scale));
       position: absolute;
-      top: 12px;
-      right: 12px;
+      top: calc(12px * var(--landscape-scale));
+      right: calc(12px * var(--landscape-scale));
       margin: 0;
       pointer-events: none;
     }
@@ -355,9 +373,35 @@
       display: flex !important;
     }
 
+    .hearts-landscape .heart {
+      width: calc(24px * var(--landscape-scale));
+      height: calc(24px * var(--landscape-scale));
+    }
+
+    .hearts-landscape {
+      gap: calc(4px * var(--landscape-scale));
+      padding: calc(8px * var(--landscape-scale)) calc(12px * var(--landscape-scale));
+    }
+
     .stats-landscape {
       display: flex !important;
       align-items: flex-end !important;
+      gap: calc(8px * var(--landscape-scale));
+    }
+
+    .stats-landscape .counter {
+      padding: calc(8px * var(--landscape-scale)) calc(12px * var(--landscape-scale));
+      font-size: calc(14px * var(--landscape-scale));
+    }
+
+    .stats-landscape .coin {
+      width: calc(20px * var(--landscape-scale));
+      height: calc(20px * var(--landscape-scale));
+    }
+
+    .stats-landscape .btn-ghost {
+      padding: calc(8px * var(--landscape-scale)) calc(12px * var(--landscape-scale));
+      font-size: calc(2em * var(--landscape-scale));
     }
 
     .hud-left > * {
@@ -376,10 +420,10 @@
 
     .stick {
       position: absolute;
-      left: 8px;
-      bottom: 8px;
-      width: 110px;
-      height: 110px;
+      left: calc(8px * var(--landscape-scale));
+      bottom: calc(8px * var(--landscape-scale));
+      width: calc(110px * var(--landscape-scale));
+      height: calc(110px * var(--landscape-scale));
       margin: 0;
       pointer-events: auto;
     }
@@ -388,11 +432,17 @@
       position: relative;
       right: auto;
       bottom: auto;
-      margin: 12px;
+      margin: calc(12px * var(--landscape-scale));
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: calc(16px * var(--landscape-scale));
       pointer-events: auto;
+    }
+
+    .buttons .btn {
+      width: calc(64px * var(--landscape-scale));
+      height: calc(64px * var(--landscape-scale));
+      font-size: calc(16px * var(--landscape-scale));
     }
 
     .hint {
@@ -400,6 +450,8 @@
       bottom: auto;
       top: 50%;
       transform: translate(-50%, -50%);
+      font-size: calc(14px * var(--landscape-scale));
+      padding: calc(8px * var(--landscape-scale)) calc(12px * var(--landscape-scale));
     }
   }
 
@@ -1405,6 +1457,9 @@
 
   // ミニマップ描画
   function drawMinimap() {
+    // 描画前に現在位置のマップを訪問済みとして記録（念のため）
+    markMapVisited(currentMapX, currentMapY);
+    
     const drawToCanvas = (ctx, canvas) => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
     
@@ -1476,9 +1531,10 @@
       
       for (const pos of mapPositions) {
         const [mx, my] = pos.key.split(',').map(Number);
-        const isVisited = isMapVisited(mx, my);
         const isCurrent = (currentMapX === mx && currentMapY === my);
+        const isVisited = isMapVisited(mx, my);
         
+        // 現在位置のマップまたは訪問済みマップを描画
         if (isVisited || isCurrent) {
           const mapColor = mapTypes[pos.key] ? mapTypes[pos.key].color : getMapColor(mx, my);
           const px = offsetX + pos.x * cellSize;
