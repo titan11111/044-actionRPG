@@ -304,7 +304,11 @@
     --landscape-scale: 0.8;
   }
   
-  @media (orientation: landscape) and (max-height: 600px) {
+  @media (orientation: landscape) and (min-height: 601px) {
+    --landscape-scale: 1;
+  }
+  
+  @media (orientation: landscape) {
     
     .stage {
       width: 100vw;
@@ -351,6 +355,7 @@
       height: calc(90px * var(--landscape-scale));
       margin: 0;
       pointer-events: auto;
+      z-index: 10;
     }
 
     .hud-right {
@@ -369,8 +374,14 @@
       pointer-events: none;
     }
 
+    .hud-left .minimap-landscape {
+      display: none !important; /* .hud-left内のminimap-landscapeは非表示 */
+    }
+
     .hearts-landscape {
       display: flex !important;
+      gap: calc(4px * var(--landscape-scale));
+      padding: calc(8px * var(--landscape-scale)) calc(12px * var(--landscape-scale));
     }
 
     .hearts-landscape .heart {
@@ -378,13 +389,9 @@
       height: calc(24px * var(--landscape-scale));
     }
 
-    .hearts-landscape {
-      gap: calc(4px * var(--landscape-scale));
-      padding: calc(8px * var(--landscape-scale)) calc(12px * var(--landscape-scale));
-    }
-
     .stats-landscape {
       display: flex !important;
+      flex-direction: column !important;
       align-items: flex-end !important;
       gap: calc(8px * var(--landscape-scale));
     }
@@ -413,9 +420,11 @@
       inset: 0;
       display: flex;
       flex-direction: row;
-      align-items: center;
+      align-items: flex-end;
       justify-content: space-between;
+      padding: calc(8px * var(--landscape-scale));
       pointer-events: none;
+      box-sizing: border-box;
     }
 
     .stick {
@@ -426,17 +435,19 @@
       height: calc(110px * var(--landscape-scale));
       margin: 0;
       pointer-events: auto;
+      z-index: 10;
     }
 
     .buttons {
-      position: relative;
-      right: auto;
-      bottom: auto;
-      margin: calc(12px * var(--landscape-scale));
+      position: absolute;
+      right: calc(8px * var(--landscape-scale));
+      bottom: calc(8px * var(--landscape-scale));
+      margin: 0;
       display: flex;
       flex-direction: column;
       gap: calc(16px * var(--landscape-scale));
       pointer-events: auto;
+      z-index: 10;
     }
 
     .buttons .btn {
@@ -476,12 +487,12 @@
         <div class="minimap">
           <canvas id="minimap" width="150" height="150"></canvas>
         </div>
+        <div class="minimap minimap-landscape">
+          <canvas id="minimap-landscape" width="150" height="150"></canvas>
+        </div>
         <div class="hud-left">
-          <div class="minimap minimap-landscape">
-            <canvas id="minimap-landscape" width="150" height="150"></canvas>
-          </div>
           <div class="hearts hearts-landscape" id="hearts-landscape"></div>
-          <div class="stats-landscape" style="display:flex; flex-direction:column; gap:8px; align-items:flex-start;">
+          <div class="stats-landscape">
             <div class="counter">
               <div class="coin"></div>
               <span id="coins-landscape">0</span>
@@ -1369,6 +1380,7 @@
     currentWeapon: WEAPONS.BOMB.id, // 現在装備中の武器
     bossItems: [], // ボスから入手したアイテム
     ending: false, // エンディングフラグ
+    chiefEventShown: false, // 村長イベント表示済みフラグ
   };
 
   // HUD要素
@@ -1467,17 +1479,17 @@
       ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       
-      // マップのサイズ（7x7グリッド表示）
-      const cellSize = 10; // 7x7グリッドに収めるため少し小さく
-      const drawSize = cellSize - 1; // 実際の描画サイズ（9px）
+      // マップのサイズ（9x9グリッド表示）
+      const cellSize = 8; // 9x9グリッドに収めるため少し小さく
+      const drawSize = cellSize - 1; // 実際の描画サイズ（7px）
       
       // 中央マップ(0,0)のマスの中心がミニマップの中心に来るようにオフセットを計算
-      // 中央マップは(3,3)の位置（7x7グリッドの中央）
+      // 中央マップは(4,4)の位置（9x9グリッドの中央）
       // ミニマップの中心: (canvas.width/2, canvas.height/2)
       const centerX = canvas.width / 2;
       const centerY = canvas.height / 2;
-      const offsetX = centerX - 3 * cellSize - drawSize / 2;
-      const offsetY = centerY - 3 * cellSize - drawSize / 2;
+      const offsetX = centerX - 4 * cellSize - drawSize / 2;
+      const offsetY = centerY - 4 * cellSize - drawSize / 2;
       
       // 訪問したマップを描画
       const mapTypes = {
@@ -1505,15 +1517,15 @@
         return '#666'; // デフォルト
       };
       
-      // 各マップ位置を描画（7x7グリッド、中央が(3,3)）
-      // x: -3から3まで、y: -3から3まで
+      // 各マップ位置を描画（9x9グリッド、中央が(4,4)）
+      // x: -4から4まで、y: -4から4まで
       const mapPositions = [];
-      for(let y = -3; y <= 3; y++) {
-        for(let x = -3; x <= 3; x++) {
+      for(let y = -4; y <= 4; y++) {
+        for(let x = -4; x <= 4; x++) {
           mapPositions.push({
             key: `${x},${y}`,
-            x: x + 3, // -3を0に、0を3に、3を6に変換
-            y: y + 3  // -3を0に、0を3に、3を6に変換
+            x: x + 4, // -4を0に、0を4に、4を8に変換
+            y: y + 4  // -4を0に、0を4に、4を8に変換
           });
         }
       }
@@ -1534,14 +1546,28 @@
         const isCurrent = (currentMapX === mx && currentMapY === my);
         const isVisited = isMapVisited(mx, my);
         
+        // 4つのアイテムが揃ったら村（0,0）を強制的に訪問済みとして表示
+        const isVillage = (mx === 0 && my === 0);
+        const shouldShow = isVisited || isCurrent || (isVillage && state.bossItems.length === 4);
+        
         // 現在位置のマップまたは訪問済みマップを描画
-        if (isVisited || isCurrent) {
+        if (shouldShow) {
           const mapColor = mapTypes[pos.key] ? mapTypes[pos.key].color : getMapColor(mx, my);
           const px = offsetX + pos.x * cellSize;
           const py = offsetY + pos.y * cellSize;
           
+          // 4つのアイテムが揃ったら村を点灯（光る効果）
+          const isVillageLighted = isVillage && state.bossItems.length === 4;
+          let fillColor = isCurrent ? '#ffd700' : mapColor;
+          
+          if (isVillageLighted) {
+            // 点灯効果：明るい黄色で点滅
+            const pulse = Math.sin(performance.now() * 0.005) * 0.3 + 0.7;
+            fillColor = `rgba(255, 215, 0, ${pulse})`;
+          }
+          
           // マップセルを描画
-          ctx.fillStyle = isCurrent ? '#ffd700' : mapColor;
+          ctx.fillStyle = fillColor;
           ctx.fillRect(px, py, cellSize - 2, cellSize - 2);
           
           // 現在位置のハイライト
@@ -1554,6 +1580,18 @@
             ctx.fillStyle = '#fff';
             ctx.beginPath();
             ctx.arc(px + cellSize/2, py + cellSize/2, 2, 0, Math.PI * 2);
+            ctx.fill();
+          } else if (isVillageLighted) {
+            // 村が点灯している場合の特別なハイライト
+            ctx.strokeStyle = '#ffd700';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(px - 1, py - 1, cellSize, cellSize);
+            
+            // 点灯インジケーター（光る円）
+            const glow = Math.sin(performance.now() * 0.005) * 0.5 + 0.5;
+            ctx.fillStyle = `rgba(255, 215, 0, ${glow})`;
+            ctx.beginPath();
+            ctx.arc(px + cellSize/2, py + cellSize/2, 3, 0, Math.PI * 2);
             ctx.fill();
           } else {
             // 訪問済みマップの枠
@@ -1970,19 +2008,53 @@
       this.animT = 0;
       this.speed = 40;
       this.scale = 1;
+      this.targetScale = 1; // 目標スケール
+      this.transformTime = 0; // 変形アニメーション時間
+      this.isTransforming = false; // 変形中フラグ
     }
     
     update(dt) {
       this.animT += dt;
       this.attackCd -= dt;
       
-      if (this.phase === 2) {
-        this.scale = 3; // 3倍に巨大化
-        this.w = 108; this.h = 108;
-      } else if (this.phase === 3) {
-        this.scale = 3;
-        this.w = 108; this.h = 108;
-        this.speed = 80; // 素早さ2倍
+      // 変形アニメーション
+      if (this.isTransforming) {
+        this.transformTime += dt;
+        const transformDuration = 1.0; // 1秒かけて変形
+        if (this.transformTime < transformDuration) {
+          // スムーズにスケールを変化
+          const progress = this.transformTime / transformDuration;
+          const easeProgress = progress < 0.5 
+            ? 2 * progress * progress 
+            : 1 - Math.pow(-2 * progress + 2, 2) / 2; // ease-in-out
+          this.scale = 1 + (this.targetScale - 1) * easeProgress;
+          this.w = 36 * this.scale;
+          this.h = 36 * this.scale;
+        } else {
+          // 変形完了
+          this.scale = this.targetScale;
+          this.w = 36 * this.scale;
+          this.h = 36 * this.scale;
+          this.isTransforming = false;
+        }
+      }
+      
+      // phase 2と3は巨大化
+      if (this.phase === 2 || this.phase === 3) {
+        if (!this.isTransforming && this.scale !== 3) {
+          // 変形開始
+          this.targetScale = 3;
+          this.isTransforming = true;
+          this.transformTime = 0;
+        }
+        if (!this.isTransforming) {
+          this.scale = 3;
+          this.w = 108; this.h = 108;
+        }
+        // phase 3は素早さ2倍
+        if (this.phase === 3) {
+          this.speed = 80;
+        }
       }
       
       // プレイヤーに向かって移動
@@ -2107,19 +2179,19 @@
         chiefBoss: null
       };
       
-      // 四隅にボスを配置
-      if (currentMapX === -3 && currentMapY === -3) {
+      // 四隅にボスを配置（一番端っこ）
+      if (currentMapX === -4 && currentMapY === -4) {
         // 北西：玄武
-        entities.bosses = [new Boss(160, 90, 'genbu')];
-      } else if (currentMapX === 3 && currentMapY === -3) {
+        entities.bosses = [new Boss(160, 80, 'genbu')];
+      } else if (currentMapX === 4 && currentMapY === -4) {
         // 北東：青龍
-        entities.bosses = [new Boss(160, 90, 'seiryu')];
-      } else if (currentMapX === -3 && currentMapY === 3) {
+        entities.bosses = [new Boss(160, 80, 'seiryu')];
+      } else if (currentMapX === -4 && currentMapY === 4) {
         // 南西：麒麟
-        entities.bosses = [new Boss(160, 90, 'kirin')];
-      } else if (currentMapX === 3 && currentMapY === 3) {
+        entities.bosses = [new Boss(160, 80, 'kirin')];
+      } else if (currentMapX === 4 && currentMapY === 4) {
         // 南東：朱雀
-        entities.bosses = [new Boss(160, 90, 'suzaku')];
+        entities.bosses = [new Boss(160, 80, 'suzaku')];
       }
       
       // マップタイプに応じてエンティティを配置
@@ -2690,7 +2762,8 @@
                 // 4つ揃ったかチェック
                 if (state.bossItems.length === 4) {
                   setTimeout(() => {
-                    showChiefEvent();
+                    showHint('📢 村長から話があるようだ\n至急村長のところに戻るように！', 5.0);
+                    Sound.playSound('level');
                   }, 1000);
                 }
               }
@@ -3561,6 +3634,27 @@
     
     // 村長ボス
     if (entities.chiefBoss && !entities.chiefBoss.dead) {
+      // 変形中のエフェクト
+      if (entities.chiefBoss.isTransforming) {
+        const progress = entities.chiefBoss.transformTime / 1.0;
+        const glowIntensity = Math.sin(progress * Math.PI * 4) * 0.5 + 0.5;
+        
+        // 光るエフェクト
+        ctx.save();
+        ctx.globalAlpha = glowIntensity * 0.6;
+        ctx.fillStyle = '#ffd700';
+        ctx.beginPath();
+        ctx.arc(entities.chiefBoss.x, entities.chiefBoss.y, entities.chiefBoss.w * 0.8, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // 外側の光
+        ctx.globalAlpha = glowIntensity * 0.3;
+        ctx.beginPath();
+        ctx.arc(entities.chiefBoss.x, entities.chiefBoss.y, entities.chiefBoss.w * 1.2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+      
       ctx.save();
       ctx.translate(entities.chiefBoss.x, entities.chiefBoss.y);
       ctx.scale(entities.chiefBoss.scale, entities.chiefBoss.scale);
@@ -3570,6 +3664,9 @@
         // 本気モード：原色の派手な色
         const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff'];
         ctx.fillStyle = colors[Math.floor(entities.chiefBoss.animT * 5) % colors.length];
+      } else if (entities.chiefBoss.phase === 2) {
+        // 巨大化モード：少し明るい色
+        ctx.fillStyle = '#8b5a3c';
       } else {
         ctx.fillStyle = '#6b4423';
       }
@@ -3744,7 +3841,16 @@
     }
     
     // 入力（武器使用中は移動できない）
-    const speed = player.speed;
+    // 横画面時のスケールを考慮して移動速度を調整
+    const isLandscape = window.matchMedia('(orientation: landscape)').matches;
+    let landscapeScale = 1;
+    if (isLandscape) {
+      const scaleValue = getComputedStyle(document.documentElement).getPropertyValue('--landscape-scale').trim();
+      landscapeScale = scaleValue ? parseFloat(scaleValue) : 1;
+      // スケールが未設定（高さ600px超）の場合は1.0
+      if (isNaN(landscapeScale) || landscapeScale === 0) landscapeScale = 1;
+    }
+    const speed = player.speed / landscapeScale; // スケールが小さいほど速度を上げる
     if (player.weaponCd <= 0) {
       player.vx = Input.ax * speed; 
       player.vy = Input.ay * speed;
@@ -3816,8 +3922,11 @@
         markMapVisited(currentMapX, currentMapY);
         Sound.playSound('button');
       } else {
-        // 境界を越えられない
-        player.y = 0;
+        // 境界を越えられない（確実に0に戻す）
+        player.y = Math.max(0, player.y);
+        if (player.y < 0) {
+          player.y = 0;
+        }
         showHint('通れません。', 2.0);
         Sound.playSound('button');
       }
@@ -3837,6 +3946,11 @@
         showHint('通れません。', 2.0);
         Sound.playSound('button');
       }
+    }
+    
+    // 上端の境界を確実にチェック（念のため追加チェック）
+    if (currentMapY === MIN_MAP_Y && player.y < 0) {
+      player.y = 0;
     }
     
     // 現在のマップを訪問済みにマーク
@@ -3882,12 +3996,58 @@
           if (chest){ 
             chest.opened = true; 
             
+            // ボスフィールドの判定
+            const isBossField = (currentMapX === 3 && currentMapY === -3) || // 北東（青龍）
+                              (currentMapX === -3 && currentMapY === -3) || // 北西（玄武）
+                              (currentMapX === -3 && currentMapY === 3) ||  // 南西（麒麟）
+                              (currentMapX === 3 && currentMapY === 3);     // 南東（朱雀）
+            
             // 武器が入っている場合
             if (chest.weapon && !state.weapons.includes(chest.weapon)) {
               state.weapons.push(chest.weapon);
               const weapon = WEAPONS[chest.weapon.toUpperCase()];
               Sound.playSound('level');
               showHint(`📦 ${weapon.icon} ${weapon.name}を入手！`, 3.0);
+            } else if (isBossField) {
+              // ボスフィールドの宝箱：村長の私物アイテムを入手
+              const bossItems = {
+                'suzaku': '村長の杖',      // 南東（朱雀）
+                'genbu': '村長のメガネ',   // 北西（玄武）
+                'seiryu': '村長の証明書',  // 北東（青龍）
+                'kirin': '村長のハンカチ'  // 南西（麒麟）
+              };
+              
+              // マップ座標からボスタイプを判定
+              let bossType = null;
+              if (currentMapX === 3 && currentMapY === -3) bossType = 'seiryu';      // 北東（青龍）
+              else if (currentMapX === -3 && currentMapY === -3) bossType = 'genbu'; // 北西（玄武）
+              else if (currentMapX === -3 && currentMapY === 3) bossType = 'kirin';  // 南西（麒麟）
+              else if (currentMapX === 3 && currentMapY === 3) bossType = 'suzaku'; // 南東（朱雀）
+              
+              const itemName = bossType ? bossItems[bossType] : null;
+              
+              if (itemName && !state.bossItems.includes(itemName)) {
+                // 村長の私物アイテムを入手
+                state.bossItems.push(itemName);
+                Sound.playSound('level');
+                showHint(`📦 アイテムを手に入れた：${itemName}`, 3.0);
+                
+                // 4つ揃ったかチェック
+                if (state.bossItems.length === 4) {
+                  setTimeout(() => {
+                    showHint('📢 村長から話があるようだ\n至急村長のところに戻るように！', 5.0);
+                    Sound.playSound('level');
+                  }, 1000);
+                }
+              } else if (itemName && state.bossItems.includes(itemName)) {
+                // 既に入手済み
+                Sound.playSound('chest'); 
+                showHint(`📦 村長の私物が入っていた...（既に入手済み）`, 3.0);
+              } else {
+                // ボスを倒していない場合
+                Sound.playSound('chest'); 
+                showHint(`📦 村長の私物が入っていた...`, 3.0);
+              }
             } else {
               // 通常の報酬
               const reward = 10 + state.level * 2;
@@ -3902,6 +4062,12 @@
           const npc = entities.npcs.find(n => near(n, 20));
           if (npc) {
             Sound.playSound('talk');
+            
+            // 4つのアイテムが揃っている場合は村長イベントを表示（村にいる時のみ）
+            if (state.bossItems.length === 4 && currentMapX === 0 && currentMapY === 0) {
+              showChiefEvent();
+              return;
+            }
             
             // 吹き出しで会話を表示
             if (npc.currentTextIndex < npc.texts.length) {
@@ -4159,11 +4325,27 @@
           // フェーズ遷移
           if (entities.chiefBoss.phase === 1 && entities.chiefBoss.hp <= 50) {
             entities.chiefBoss.phase = 2;
-            showSpeechBubble(entities.npcs[0], 'ならば力づくじゃな！');
+            // 変形アニメーション開始
+            entities.chiefBoss.targetScale = 3;
+            entities.chiefBoss.isTransforming = true;
+            entities.chiefBoss.transformTime = 0;
+            // NPCが存在する場合のみ吹き出しを表示
+            if (entities.npcs.length > 0) {
+              showSpeechBubble(entities.npcs[0], 'ならば力づくじゃな！');
+            }
             Sound.playSound('level');
           } else if (entities.chiefBoss.phase === 2 && entities.chiefBoss.hp <= 25) {
             entities.chiefBoss.phase = 3;
-            showSpeechBubble(entities.npcs[0], 'そうか、本気をだすかのう！');
+            // 変形アニメーション開始（既に巨大化している場合は再変形しない）
+            if (entities.chiefBoss.scale < 3) {
+              entities.chiefBoss.targetScale = 3;
+              entities.chiefBoss.isTransforming = true;
+              entities.chiefBoss.transformTime = 0;
+            }
+            // NPCが存在する場合のみ吹き出しを表示
+            if (entities.npcs.length > 0) {
+              showSpeechBubble(entities.npcs[0], 'そうか、本気をだすかのう！');
+            }
             Sound.playSound('level');
           }
           
@@ -4791,10 +4973,17 @@
   const btnChiefNo = document.getElementById('btnChiefNo');
 
   function showChiefEvent() {
+    // 既に表示済みの場合は何もしない
+    if (state.chiefEventShown) {
+      return;
+    }
+    
     state.paused = true;
+    state.chiefEventShown = true;
     chiefEventContent.innerHTML = `
-      <p style="margin: 0 0 16px 0;">わしの代わりに村長になるか、相談される。</p>
       <p style="margin: 0 0 16px 0;">4つのアイテムを集めた勇者よ、</p>
+      <p style="margin: 0 0 16px 0;">わしも年を取って、もう村長を続けるのが難しくなってきた。</p>
+      <p style="margin: 0 0 16px 0;">君に村長を継いでもらいたいんだが、</p>
       <p style="margin: 0;">この村を守ってくれるか？</p>
     `;
     chiefEvent.showModal();
@@ -4832,7 +5021,68 @@
       text = '村長を倒した勇者は、\n\n真の力を手に入れた。\n\n村は新たな時代を迎えた...';
     }
     
-    endingContent.innerHTML = `<p style="white-space: pre-line; text-align: center; font-size: 18px; line-height: 1.8;">${text}</p>`;
+    // エンディングの種類を判定（YESエンディングかどうか）
+    const isYesEnding = text.includes('村長として働く');
+    
+    if (isYesEnding) {
+      // YESエンディング：迫力のある演出と登場人物
+      endingContent.innerHTML = `
+        <div style="animation: fadeIn 1s ease-in;">
+          <p style="white-space: pre-line; text-align: center; font-size: 24px; line-height: 2; font-weight: bold; color: #ffd700; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); margin-bottom: 20px;">
+            ✨ 真の勇者の物語 ✨
+          </p>
+          <p style="white-space: pre-line; text-align: center; font-size: 20px; line-height: 2; color: #fff; margin-bottom: 20px;">
+            ${text}
+          </p>
+          
+          <div style="text-align: center; margin: 30px 0; padding: 20px; background: rgba(0,0,0,0.3); border-radius: 10px;">
+            <p style="font-size: 18px; color: #ffd700; margin-bottom: 15px; font-weight: bold;">登場人物</p>
+            <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; font-size: 14px; color: #fff;">
+              <div>👴 村長（長老）</div>
+              <div>🦸 勇者</div>
+              <div>🟢 スライム</div>
+              <div>🏹 アーチャー</div>
+              <div>🌵 サボテンモンスター</div>
+              <div>🐺 雪オオカミ</div>
+              <div>🦂 サソリ</div>
+              <div>🐙 クラーケン</div>
+              <div>🔥 火の精霊</div>
+              <div>🐉 朱雀</div>
+              <div>🐢 玄武</div>
+              <div>🐲 青龍</div>
+              <div>🦌 麒麟</div>
+            </div>
+          </div>
+          
+          <div style="text-align: center; margin-top: 30px;">
+            <div style="display: inline-block; animation: pulse 2s infinite;">
+              <p style="font-size: 32px; margin: 0;">🏆</p>
+            </div>
+          </div>
+          <p style="white-space: pre-line; text-align: center; font-size: 16px; line-height: 2; color: #ccc; margin-top: 30px;">
+            勇者の選択により、<br>
+            村は永遠の平和を手に入れた。<br>
+            <br>
+            人々は勇者を称え、<br>
+            その名は永遠に語り継がれる...
+          </p>
+        </div>
+        <style>
+          @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+          @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+          }
+        </style>
+      `;
+    } else {
+      // 通常エンディング
+      endingContent.innerHTML = `<p style="white-space: pre-line; text-align: center; font-size: 18px; line-height: 1.8;">${text}</p>`;
+    }
+    
     endingDialog.showModal();
   }
 
