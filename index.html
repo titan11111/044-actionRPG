@@ -74,6 +74,16 @@
     flex-direction: column;
     gap: 8px;
     align-items: flex-end;
+    z-index: 10;
+    /* 右上のステータスと右下のボタンが重ならないようにする */
+    max-width: calc(100vw - 250px); /* 右側のボタンエリア（X+🎒+A+B）を確保 */
+  }
+  
+  .hud-right .stats-row {
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    align-items: center;
   }
 
   .hud-left {
@@ -88,15 +98,18 @@
 
   .hearts { 
     display:flex; 
+    flex-wrap: nowrap; /* 2段にならないようにする */
     gap:4px; 
     background: var(--panel); 
     border:1px solid var(--outline); 
     padding:8px 12px; 
     border-radius:12px;
     box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    max-width: calc(24px * 10 + 4px * 9 + 24px); /* 最大10個の星が収まる幅 */
   }
   .heart { 
     width:24px; height:24px; 
+    flex-shrink: 0; /* 星のサイズを固定 */
     background: #ff4364;
     clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
     filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
@@ -157,7 +170,7 @@
   
   .stick { 
     position:absolute; left: 10px; bottom: 10px; 
-    width: 160px; height: 160px; pointer-events:auto; 
+    width: 176px; height: 176px; pointer-events:auto; 
   }
   .stick .base { 
     position:absolute; inset: 0; border-radius:50%; 
@@ -174,10 +187,49 @@
     box-shadow: 0 4px 8px rgba(0,0,0,0.35);
   }
 
-  .buttons { 
-    position:absolute; right: 10px; bottom: 10px; 
-    display:flex; flex-direction: column;
-    gap: 12px; pointer-events:auto; 
+  .btn-top-row {
+    position: absolute;
+    right: 10px;
+    bottom: calc(10px + var(--btn-size) + 12px);
+    display: flex;
+    flex-direction: row;
+    gap: 12px;
+    align-items: center;
+    pointer-events: auto;
+    z-index: 10;
+  }
+  
+  .btn-bottom-row {
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+    display: flex;
+    flex-direction: row;
+    gap: 12px;
+    align-items: center;
+    pointer-events: auto;
+    z-index: 10;
+  }
+  
+  .btn-item-select {
+    width: var(--btn-size);
+    height: var(--btn-size);
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--panel-strong), var(--panel));
+    border: 2px solid var(--outline);
+    display: grid;
+    place-items: center;
+    font-size: 2em;
+    line-height: 1;
+    box-shadow: 0 6px 12px rgba(0,0,0,0.35);
+    transition: all 0.2s ease;
+    cursor: pointer;
+    pointer-events: auto;
+  }
+  
+  .btn-item-select:active {
+    transform: scale(0.92);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.4);
   }
   
   .btn { 
@@ -276,8 +328,8 @@
     position: absolute;
     top: 8px;
     left: 8px;
-    width: 150px;
-    height: 150px;
+    width: 165px;
+    height: 165px;
     background: rgba(0, 0, 0, 0.6);
     border: 2px solid var(--outline);
     border-radius: 8px;
@@ -351,8 +403,8 @@
       position: absolute;
       top: calc(8px * var(--landscape-scale));
       left: calc(8px * var(--landscape-scale));
-      width: calc(90px * var(--landscape-scale));
-      height: calc(90px * var(--landscape-scale));
+      width: calc(99px * var(--landscape-scale));
+      height: calc(99px * var(--landscape-scale));
       margin: 0;
       pointer-events: auto;
       z-index: 10;
@@ -380,19 +432,22 @@
 
     .hearts-landscape {
       display: flex !important;
+      flex-wrap: nowrap; /* 2段にならないようにする */
       gap: calc(4px * var(--landscape-scale));
       padding: calc(8px * var(--landscape-scale)) calc(12px * var(--landscape-scale));
+      max-width: calc(24px * 10 * var(--landscape-scale) + 4px * 9 * var(--landscape-scale) + 24px * var(--landscape-scale)); /* 最大10個の星が収まる幅 */
     }
 
     .hearts-landscape .heart {
       width: calc(24px * var(--landscape-scale));
       height: calc(24px * var(--landscape-scale));
+      flex-shrink: 0; /* 星のサイズを固定 */
     }
 
     .stats-landscape {
       display: flex !important;
-      flex-direction: column !important;
-      align-items: flex-end !important;
+      flex-direction: row !important;
+      align-items: center !important;
       gap: calc(8px * var(--landscape-scale));
     }
 
@@ -431,29 +486,47 @@
       position: absolute;
       left: calc(8px * var(--landscape-scale));
       bottom: calc(8px * var(--landscape-scale));
-      width: calc(110px * var(--landscape-scale));
-      height: calc(110px * var(--landscape-scale));
+      width: calc(121px * var(--landscape-scale));
+      height: calc(121px * var(--landscape-scale));
       margin: 0;
       pointer-events: auto;
       z-index: 10;
     }
 
-    .buttons {
+    .btn-top-row {
+      position: absolute;
+      right: calc(8px * var(--landscape-scale));
+      bottom: calc((8px + 64px + 16px) * var(--landscape-scale));
+      gap: calc(12px * var(--landscape-scale));
+      pointer-events: auto;
+      z-index: 10;
+    }
+    
+    .btn-bottom-row {
       position: absolute;
       right: calc(8px * var(--landscape-scale));
       bottom: calc(8px * var(--landscape-scale));
-      margin: 0;
-      display: flex;
-      flex-direction: column;
-      gap: calc(16px * var(--landscape-scale));
+      gap: calc(12px * var(--landscape-scale));
       pointer-events: auto;
       z-index: 10;
     }
 
-    .buttons .btn {
+    .btn-top-row .btn,
+    .btn-bottom-row .btn {
       width: calc(64px * var(--landscape-scale));
       height: calc(64px * var(--landscape-scale));
       font-size: calc(16px * var(--landscape-scale));
+    }
+    
+    /* 横画面時も右上のステータスと右下のボタンが重ならないようにする */
+    .hud-left {
+      max-width: calc(100vw - 300px * var(--landscape-scale));
+    }
+    
+    .btn-item-select {
+      width: calc(64px * var(--landscape-scale));
+      height: calc(64px * var(--landscape-scale));
+      font-size: calc(2em * var(--landscape-scale));
     }
 
     .hint {
@@ -501,12 +574,11 @@
               <span style="color: var(--accent); font-weight: 800;">Lv</span>
               <span id="level-landscape">1</span>
             </div>
-            <button class="btn-ghost" id="btnPause-landscape" title="持ち物" style="font-size: 2em; line-height: 1; padding: 8px 12px;">🎒</button>
           </div>
         </div>
         <div class="hud-right">
           <div class="hearts" id="hearts"></div>
-          <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
+          <div class="stats-row">
             <div class="counter">
               <div class="coin"></div>
               <span id="coins">0</span>
@@ -515,7 +587,6 @@
               <span style="color: var(--accent); font-weight: 800;">Lv</span>
               <span id="level">1</span>
             </div>
-            <button class="btn-ghost" id="btnPause" title="持ち物" style="font-size: 2em; line-height: 1; padding: 8px 12px;">🎒</button>
           </div>
         </div>
         <div class="hint" id="hint">🎮 移動してみよう</div>
@@ -528,23 +599,26 @@
           <div class="base"></div>
           <div class="knob" id="stickKnob"></div>
         </div>
-        <div class="buttons">
-          <button class="btn a" id="btnA" title="攻撃">
-            <div style="position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-              <div style="font-size: 20px;">⚔️</div>
-              <div style="font-size: 9px; color: rgba(255,255,255,0.7); margin-top: 2px;">J/SP</div>
-            </div>
-          </button>
+        <div class="btn-top-row">
+          <button class="btn-item-select" id="btnPause" title="持ち物">🎒</button>
           <button class="btn b" id="btnB" title="アクション（宝箱・会話）">
-            <div style="position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-              <div style="font-size: 20px;">🎁/💬</div>
-              <div style="font-size: 9px; color: rgba(255,255,255,0.7); margin-top: 2px;">Z</div>
+            <div style="position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; padding: 2px;">
+              <div style="font-size: 18px; line-height: 1;">🎁/💬</div>
+              <div style="font-size: 8px; color: rgba(255,255,255,0.7); margin-top: 1px; line-height: 1;">Z</div>
             </div>
           </button>
+        </div>
+        <div class="btn-bottom-row">
           <button class="btn x" id="btnX" title="武器使用">
             <div style="position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
               <div id="weaponIcon" style="font-size: 20px;">💣</div>
               <div style="font-size: 9px; color: rgba(255,255,255,0.7); margin-top: 2px;">X</div>
+            </div>
+          </button>
+          <button class="btn a" id="btnA" title="攻撃">
+            <div style="position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+              <div style="font-size: 20px;">⚔️</div>
+              <div style="font-size: 9px; color: rgba(255,255,255,0.7); margin-top: 2px;">J/SP</div>
             </div>
           </button>
         </div>
@@ -639,24 +713,24 @@
             map[y][x] = T.PATH;
           }
         }
-        // 木
-        for(let i = 0; i < 30; i++){
+        // 木（30%に削減）
+        for(let i = 0; i < 9; i++){
           const x = Math.floor(Math.random() * COLS);
           const y = Math.floor(Math.random() * ROWS);
           if (map[y] && map[y][x] === T.GRASS) {
             map[y][x] = T.TREE;
           }
         }
-        // 水
-        for(let i = 0; i < 10; i++){
+        // 水（30%に削減）
+        for(let i = 0; i < 3; i++){
           const x = Math.floor(Math.random() * COLS);
           const y = Math.floor(Math.random() * ROWS);
           if (map[y] && map[y][x] === T.GRASS) {
             map[y][x] = T.WATER;
           }
         }
-        // 花
-        for(let i = 0; i < 15; i++){
+        // 花（30%に削減）
+        for(let i = 0; i < 5; i++){
           const x = Math.floor(Math.random() * COLS);
           const y = Math.floor(Math.random() * ROWS);
           if (map[y] && map[y][x] === T.GRASS) {
@@ -666,8 +740,8 @@
         break;
 
       case 'forest': // 上：森のエリア
-        // 木を多く配置
-        for(let i = 0; i < 50; i++){
+        // 木を多く配置（30%に削減）
+        for(let i = 0; i < 15; i++){
           const x = Math.floor(Math.random() * COLS);
           const y = Math.floor(Math.random() * ROWS);
           if (map[y] && map[y][x] === T.GRASS) {
@@ -682,8 +756,8 @@
             }
           }
         }
-        // 花を少し
-        for(let i = 0; i < 8; i++){
+        // 花を少し（30%に削減）
+        for(let i = 0; i < 2; i++){
           const x = Math.floor(Math.random() * COLS);
           const y = Math.floor(Math.random() * ROWS);
           if (map[y] && map[y][x] === T.GRASS) {
@@ -717,8 +791,8 @@
             }
           }
         }
-        // 木を少し
-        for(let i = 0; i < 15; i++){
+        // 木を少し（30%に削減）
+        for(let i = 0; i < 5; i++){
           const x = Math.floor(Math.random() * COLS);
           const y = Math.floor(Math.random() * 5);
           if (map[y] && map[y][x] === T.GRASS) {
@@ -728,16 +802,16 @@
         break;
 
       case 'cave': // 左：洞窟のエリア
-        // 岩を多く配置
-        for(let i = 0; i < 40; i++){
+        // 岩を多く配置（30%に削減）
+        for(let i = 0; i < 12; i++){
           const x = Math.floor(Math.random() * COLS);
           const y = Math.floor(Math.random() * ROWS);
           if (map[y] && map[y][x] === T.GRASS) {
             map[y][x] = T.ROCK;
           }
         }
-        // 水（洞窟の水たまり）
-        for(let i = 0; i < 15; i++){
+        // 水（洞窟の水たまり）（30%に削減）
+        for(let i = 0; i < 5; i++){
           const x = Math.floor(Math.random() * COLS);
           const y = Math.floor(Math.random() * ROWS);
           if (map[y] && map[y][x] === T.GRASS) {
@@ -755,8 +829,8 @@
         break;
 
       case 'field': // 右：草原のエリア
-        // 花を多く配置
-        for(let i = 0; i < 30; i++){
+        // 花を多く配置（30%に削減）
+        for(let i = 0; i < 9; i++){
           const x = Math.floor(Math.random() * COLS);
           const y = Math.floor(Math.random() * ROWS);
           if (map[y] && map[y][x] === T.GRASS) {
@@ -771,8 +845,8 @@
             }
           }
         }
-        // 木を少し
-        for(let i = 0; i < 10; i++){
+        // 木を少し（30%に削減）
+        for(let i = 0; i < 3; i++){
           const x = Math.floor(Math.random() * COLS);
           const y = Math.floor(Math.random() * ROWS);
           if (map[y] && map[y][x] === T.GRASS) {
@@ -782,8 +856,8 @@
         break;
 
       case 'ruins': // 北西：廃墟のエリア（森と洞窟の間）
-        // 岩を多く配置（廃墟の石）
-        for(let i = 0; i < 35; i++){
+        // 岩を多く配置（廃墟の石）（30%に削減）
+        for(let i = 0; i < 11; i++){
           const x = Math.floor(Math.random() * COLS);
           const y = Math.floor(Math.random() * ROWS);
           if (map[y] && map[y][x] === T.GRASS) {
@@ -806,8 +880,8 @@
             }
           }
         }
-        // 木を少し（森の名残）
-        for(let i = 0; i < 8; i++){
+        // 木を少し（森の名残）（30%に削減）
+        for(let i = 0; i < 2; i++){
           const x = Math.floor(Math.random() * COLS);
           const y = Math.floor(Math.random() * ROWS);
           if (map[y] && map[y][x] === T.GRASS) {
@@ -817,8 +891,8 @@
         break;
 
       case 'garden': // 北東：花畑のエリア（森と草原の間）
-        // 花を大量に配置
-        for(let i = 0; i < 50; i++){
+        // 花を大量に配置（30%に削減）
+        for(let i = 0; i < 15; i++){
           const x = Math.floor(Math.random() * COLS);
           const y = Math.floor(Math.random() * ROWS);
           if (map[y] && map[y][x] === T.GRASS) {
@@ -852,16 +926,16 @@
 
       case 'cavecoast': // 南西：海岸洞窟のエリア（海岸と洞窟の間）
         // 左側に洞窟風、右側に海岸風
-        // 左側に岩を配置
-        for(let i = 0; i < 25; i++){
+        // 左側に岩を配置（30%に削減）
+        for(let i = 0; i < 8; i++){
           const x = Math.floor(Math.random() * 10);
           const y = Math.floor(Math.random() * ROWS);
           if (map[y] && map[y][x] === T.GRASS) {
             map[y][x] = T.ROCK;
           }
         }
-        // 右側に水を配置
-        for(let i = 0; i < 15; i++){
+        // 右側に水を配置（30%に削減）
+        for(let i = 0; i < 5; i++){
           const x = Math.floor(Math.random() * 10) + 10;
           const y = Math.floor(Math.random() * ROWS);
           if (map[y] && map[y][x] === T.GRASS) {
@@ -911,8 +985,8 @@
             }
           }
         }
-        // 花を少し（ビーチの装飾）
-        for(let i = 0; i < 10; i++){
+        // 花を少し（ビーチの装飾）（30%に削減）
+        for(let i = 0; i < 3; i++){
           const x = Math.floor(Math.random() * COLS);
           const y = Math.floor(Math.random() * 6);
           if (map[y] && map[y][x] === T.SAND) {
@@ -924,8 +998,8 @@
       case 'cactus': // 北東方向：サボテン、陽気な世界
         // ボスフィールド判定（北東の四隅）
         const isBossFieldNE = (mapX === 3 && mapY === -3);
-        // サボテンを多く配置（ボスフィールドは少なめ：70%減らす）
-        for(let i = 0; i < (isBossFieldNE ? 3 : 40); i++){
+        // サボテンを多く配置（通常は30%に削減、ボスフィールドは10%以下に抑える）
+        for(let i = 0; i < (isBossFieldNE ? 1 : 12); i++){
           const x = Math.floor(Math.random() * COLS);
           const y = Math.floor(Math.random() * ROWS);
           if (map[y] && map[y][x] === T.GRASS) {
@@ -940,8 +1014,8 @@
             }
           }
         }
-        // 花を少し（明るい雰囲気、ボスフィールドは少なめ：70%減らす）
-        for(let i = 0; i < (isBossFieldNE ? 2 : 20); i++){
+        // 花を少し（明るい雰囲気、通常は30%に削減、ボスフィールドは10%以下に抑える）
+        for(let i = 0; i < (isBossFieldNE ? 1 : 6); i++){
           const x = Math.floor(Math.random() * COLS);
           const y = Math.floor(Math.random() * ROWS);
           if (map[y] && map[y][x] === T.GRASS) {
@@ -961,16 +1035,16 @@
         }
         // ボスフィールド判定（北西の四隅）
         const isBossFieldNW = (mapX === -3 && mapY === -3);
-        // 山（岩）を配置（ボスフィールドは少なめ：70%減らす）
-        for(let i = 0; i < (isBossFieldNW ? 2 : 30); i++){
+        // 山（岩）を配置（通常は30%に削減、ボスフィールドは10%以下に抑える）
+        for(let i = 0; i < (isBossFieldNW ? 1 : 9); i++){
           const x = Math.floor(Math.random() * COLS);
           const y = Math.floor(Math.random() * ROWS);
           if (map[y] && map[y][x] === T.SNOW) {
             map[y][x] = T.ROCK;
           }
         }
-        // 森（木）を配置（ボスフィールドは少なめ：70%減らす）
-        for(let i = 0; i < (isBossFieldNW ? 2 : 25); i++){
+        // 森（木）を配置（通常は30%に削減、ボスフィールドは10%以下に抑える）
+        for(let i = 0; i < (isBossFieldNW ? 1 : 8); i++){
           const x = Math.floor(Math.random() * COLS);
           const y = Math.floor(Math.random() * ROWS);
           if (map[y] && map[y][x] === T.SNOW) {
@@ -998,16 +1072,16 @@
         }
         // ボスフィールド判定（南西の四隅）
         const isBossFieldSW = (mapX === -3 && mapY === 3);
-        // 洞窟（岩）を配置（ボスフィールドは少なめ：70%減らす）
-        for(let i = 0; i < (isBossFieldSW ? 2 : 35); i++){
+        // 洞窟（岩）を配置（通常は30%に削減、ボスフィールドは10%以下に抑える）
+        for(let i = 0; i < (isBossFieldSW ? 1 : 11); i++){
           const x = Math.floor(Math.random() * COLS);
           const y = Math.floor(Math.random() * ROWS);
           if (map[y] && map[y][x] === T.DESERT) {
             map[y][x] = T.ROCK;
           }
         }
-        // サボテンを少し（ボスフィールドは少なめ：70%減らす）
-        for(let i = 0; i < (isBossFieldSW ? 1 : 15); i++){
+        // サボテンを少し（通常は30%に削減、ボスフィールドは10%以下に抑える）
+        for(let i = 0; i < (isBossFieldSW ? 0 : 5); i++){
           const x = Math.floor(Math.random() * COLS);
           const y = Math.floor(Math.random() * ROWS);
           if (map[y] && map[y][x] === T.DESERT) {
@@ -1035,20 +1109,22 @@
         }
         // ボスフィールド判定（南東の四隅）
         const isBossFieldSE = (mapX === 3 && mapY === 3);
-        // 島（草）を配置（ボスフィールドは少なめ：70%減らす）
-        for(let i = 0; i < (isBossFieldSE ? 1 : 8); i++){
-          const islandX = Math.floor(Math.random() * (COLS - 6)) + 3;
-          const islandY = Math.floor(Math.random() * (ROWS - 6)) + 3;
-          for(let y = islandY - 2; y < islandY + 3 && y < ROWS; y++) {
-            for(let x = islandX - 2; x < islandX + 3 && x < COLS; x++) {
-              if (map[y] && map[y][x] === T.WATER && Math.random() > 0.3) {
+        // 島（草）を配置（通常は30%に削減、ボスフィールドは10%以下に抑える：小さな島のみ）
+        for(let i = 0; i < (isBossFieldSE ? 1 : 2); i++){
+          const islandX = Math.floor(Math.random() * (COLS - 4)) + 2;
+          const islandY = Math.floor(Math.random() * (ROWS - 4)) + 2;
+          // ボスフィールドでは小さな島（3x3）のみ生成
+          const size = isBossFieldSE ? 1 : 2;
+          for(let y = islandY - size; y < islandY + size + 1 && y < ROWS; y++) {
+            for(let x = islandX - size; x < islandX + size + 1 && x < COLS; x++) {
+              if (map[y] && map[y][x] === T.WATER && Math.random() > (isBossFieldSE ? 0.5 : 0.3)) {
                 map[y][x] = T.GRASS;
               }
             }
           }
         }
-        // 島に木を配置（ボスフィールドは少なめ：70%減らす）
-        for(let i = 0; i < (isBossFieldSE ? 1 : 15); i++){
+        // 島に木を配置（通常は30%に削減、ボスフィールドは10%以下に抑える）
+        for(let i = 0; i < (isBossFieldSE ? 0 : 5); i++){
           const x = Math.floor(Math.random() * COLS);
           const y = Math.floor(Math.random() * ROWS);
           if (map[y] && map[y][x] === T.GRASS) {
@@ -1132,6 +1208,31 @@
   const isBlock = (t) => t === T.TREE || t === T.WATER || t === T.ROCK || t === T.CACTUS || t === T.ICE;
 
   // サウンド
+  // BGM管理
+  let bgmAudio = null;
+  
+  const initBGM = () => {
+    if (!bgmAudio) {
+      bgmAudio = new Audio('bgm.mp3');
+      bgmAudio.loop = true;
+      bgmAudio.volume = 0.5;
+    }
+  };
+  
+  const playBGM = () => {
+    if (bgmAudio) {
+      bgmAudio.currentTime = 0; // 最初から再生
+      bgmAudio.play().catch(e => console.log('BGM play error:', e));
+    }
+  };
+  
+  const stopBGM = () => {
+    if (bgmAudio) {
+      bgmAudio.pause();
+      bgmAudio.currentTime = 0;
+    }
+  };
+
   const Sound = (() => {
     let audioContext = null;
     let unlocked = false;
@@ -1142,7 +1243,10 @@
           audioContext = new (window.AudioContext || window.webkitAudioContext)();
         }
         if (audioContext.state === 'suspended') audioContext.resume(); 
-        unlocked = true; 
+        unlocked = true;
+        // オーディオ解禁時にBGMを初期化
+        initBGM();
+        playBGM();
       } catch(e) {
         console.log('Audio not supported');
       }
@@ -1379,6 +1483,7 @@
     weapons: [WEAPONS.BOMB.id], // 所持武器リスト（初期は爆弾のみ）
     currentWeapon: WEAPONS.BOMB.id, // 現在装備中の武器
     bossItems: [], // ボスから入手したアイテム
+    defeatedBosses: [], // 倒したボスのタイプ（'suzaku', 'genbu', 'seiryu', 'kirin'）
     ending: false, // エンディングフラグ
     chiefEventShown: false, // 村長イベント表示済みフラグ
   };
@@ -1402,9 +1507,10 @@
   const btnPauseLandscape = document.getElementById('btnPause-landscape');
 
   function renderHUD(){
-    // 縦画面用
+    // 縦画面用 - 最大10個まで表示
     heartEl.innerHTML = '';
-    for (let i=0;i<state.maxHp;i++){
+    const maxHearts = Math.min(state.maxHp, 10); // 最大10個まで
+    for (let i=0;i<maxHearts;i++){
       const d = document.createElement('div');
       d.className = 'heart' + (i >= state.hp? ' empty':'');
       heartEl.appendChild(d);
@@ -1412,10 +1518,11 @@
     coinsEl.textContent = state.coins;
     levelEl.textContent = state.level;
     
-    // 横画面用
+    // 横画面用 - 最大10個まで表示
     if (heartElLandscape) {
       heartElLandscape.innerHTML = '';
-      for (let i=0;i<state.maxHp;i++){
+      const maxHeartsLandscape = Math.min(state.maxHp, 10); // 最大10個まで
+      for (let i=0;i<maxHeartsLandscape;i++){
         const d = document.createElement('div');
         d.className = 'heart' + (i >= state.hp? ' empty':'');
         heartElLandscape.appendChild(d);
@@ -1812,6 +1919,7 @@
       this.attackPattern = 0;
       this.animT = 0;
       this.bullets = [];
+      this.phase = 1; // フェーズ（1: 通常、2: 体力半分以下）
       
       this.moveT = 0; // 移動タイマー
       this.moveDir = 0; // 移動方向（0-3: 上下左右）
@@ -1849,6 +1957,15 @@
       this.moveT += dt;
       this.moveCd -= dt;
       
+      // HPが半分以下になったらフェーズ2へ
+      if (this.phase === 1 && this.hp <= this.maxHp / 2) {
+        this.phase = 2;
+        // フェーズ2では移動速度と攻撃速度を上昇
+        this.moveSpeed *= 1.5;
+        this.attackSpeed *= 0.7; // クールダウンが短くなる = 攻撃が速くなる
+        Sound.playSound('level'); // フェーズ変化の音
+      }
+      
       // ボスの移動パターン
       if (!this.dead) {
         this.move(dt);
@@ -1865,69 +1982,139 @@
       const oldX = this.x;
       const oldY = this.y;
       
-      switch(this.movePattern) {
-        case 'circle': // 朱雀：円形に動き回る
-          const radius = 40;
-          const centerX = 160;
-          const centerY = 90;
-          this.x = centerX + Math.cos(this.moveT * 0.5) * radius;
-          this.y = centerY + Math.sin(this.moveT * 0.5) * radius;
-          break;
-          
-        case 'backforth': // 玄武：前後に動く
-          if (this.moveCd <= 0) {
-            this.moveDir = (this.moveDir === 0) ? 1 : 0; // 0: 上、1: 下
-            this.moveCd = 2.0;
-          }
-          if (this.moveDir === 0) {
-            this.y -= this.moveSpeed * dt;
-            if (this.y < 50) {
-              this.y = 50;
-              this.moveDir = 1;
-            }
-          } else {
-            this.y += this.moveSpeed * dt;
-            if (this.y > 130) {
-              this.y = 130;
-              this.moveDir = 0;
-            }
-          }
-          break;
-          
-        case 'sideways': // 青龍：左右に動く
-          if (this.moveCd <= 0) {
-            this.moveDir = (this.moveDir === 0) ? 1 : 0; // 0: 左、1: 右
-            this.moveCd = 2.0;
-          }
-          if (this.moveDir === 0) {
-            this.x -= this.moveSpeed * dt;
-            if (this.x < 80) {
-              this.x = 80;
-              this.moveDir = 1;
-            }
-          } else {
-            this.x += this.moveSpeed * dt;
-            if (this.x > 240) {
-              this.x = 240;
-              this.moveDir = 0;
-            }
-          }
-          break;
-          
-        case 'chase': // 麒麟：プレイヤーを追いかける（ゆっくり）
-          const dx = player.x - this.x;
-          const dy = player.y - this.y;
-          const dist = Math.hypot(dx, dy);
-          if (dist > 0) {
-            const speed = this.moveSpeed * dt;
-            this.x += (dx / dist) * speed;
-            this.y += (dy / dist) * speed;
+      if (this.phase === 1) {
+        // フェーズ1: 通常の動き
+        switch(this.movePattern) {
+          case 'circle': // 朱雀：円形に動き回る
+            const radius = 40;
+            const centerX = 160;
+            const centerY = 90;
+            this.x = centerX + Math.cos(this.moveT * 0.5) * radius;
+            this.y = centerY + Math.sin(this.moveT * 0.5) * radius;
+            break;
             
-            // マップの境界で止まる
-            this.x = Math.max(60, Math.min(260, this.x));
-            this.y = Math.max(50, Math.min(130, this.y));
-          }
-          break;
+          case 'backforth': // 玄武：前後に動く
+            if (this.moveCd <= 0) {
+              this.moveDir = (this.moveDir === 0) ? 1 : 0; // 0: 上、1: 下
+              this.moveCd = 2.0;
+            }
+            if (this.moveDir === 0) {
+              this.y -= this.moveSpeed * dt;
+              if (this.y < 50) {
+                this.y = 50;
+                this.moveDir = 1;
+              }
+            } else {
+              this.y += this.moveSpeed * dt;
+              if (this.y > 130) {
+                this.y = 130;
+                this.moveDir = 0;
+              }
+            }
+            break;
+            
+          case 'sideways': // 青龍：左右に動く
+            if (this.moveCd <= 0) {
+              this.moveDir = (this.moveDir === 0) ? 1 : 0; // 0: 左、1: 右
+              this.moveCd = 2.0;
+            }
+            if (this.moveDir === 0) {
+              this.x -= this.moveSpeed * dt;
+              if (this.x < 80) {
+                this.x = 80;
+                this.moveDir = 1;
+              }
+            } else {
+              this.x += this.moveSpeed * dt;
+              if (this.x > 240) {
+                this.x = 240;
+                this.moveDir = 0;
+              }
+            }
+            break;
+            
+          case 'chase': // 麒麟：プレイヤーを追いかける（ゆっくり）
+            const dx = player.x - this.x;
+            const dy = player.y - this.y;
+            const dist = Math.hypot(dx, dy);
+            if (dist > 0) {
+              const speed = this.moveSpeed * dt;
+              this.x += (dx / dist) * speed;
+              this.y += (dy / dist) * speed;
+              
+              // マップの境界で止まる
+              this.x = Math.max(60, Math.min(260, this.x));
+              this.y = Math.max(50, Math.min(130, this.y));
+            }
+            break;
+        }
+      } else {
+        // フェーズ2: より激しい動き
+        switch(this.movePattern) {
+          case 'circle': // 朱雀：より速い円形移動
+            const radius2 = 50;
+            const centerX2 = 160;
+            const centerY2 = 90;
+            this.x = centerX2 + Math.cos(this.moveT * 1.0) * radius2;
+            this.y = centerY2 + Math.sin(this.moveT * 1.0) * radius2;
+            break;
+            
+          case 'backforth': // 玄武：ジグザグ移動
+            if (this.moveCd <= 0) {
+              this.moveDir = (this.moveDir + 1) % 4; // 0: 上、1: 右上、2: 下、3: 左下
+              this.moveCd = 1.0;
+            }
+            const zigzagSpeed = this.moveSpeed * dt;
+            if (this.moveDir === 0) {
+              this.y -= zigzagSpeed;
+              if (this.y < 50) {
+                this.y = 50;
+                this.moveDir = 2;
+              }
+            } else if (this.moveDir === 1) {
+              this.y -= zigzagSpeed * 0.7;
+              this.x += zigzagSpeed * 0.7;
+              if (this.x > 240 || this.y < 50) {
+                this.moveDir = 3;
+              }
+            } else if (this.moveDir === 2) {
+              this.y += zigzagSpeed;
+              if (this.y > 130) {
+                this.y = 130;
+                this.moveDir = 0;
+              }
+            } else {
+              this.y += zigzagSpeed * 0.7;
+              this.x -= zigzagSpeed * 0.7;
+              if (this.x < 80 || this.y > 130) {
+                this.moveDir = 1;
+              }
+            }
+            break;
+            
+          case 'sideways': // 青龍：円形移動に変更
+            const radius3 = 45;
+            const centerX3 = 160;
+            const centerY3 = 90;
+            this.x = centerX3 + Math.cos(this.moveT * 0.8) * radius3;
+            this.y = centerY3 + Math.sin(this.moveT * 0.8) * radius3;
+            break;
+            
+          case 'chase': // 麒麟：より積極的に追尾
+            const dx2 = player.x - this.x;
+            const dy2 = player.y - this.y;
+            const dist2 = Math.hypot(dx2, dy2);
+            if (dist2 > 0) {
+              const speed2 = this.moveSpeed * dt;
+              this.x += (dx2 / dist2) * speed2;
+              this.y += (dy2 / dist2) * speed2;
+              
+              // マップの境界で止まる
+              this.x = Math.max(60, Math.min(260, this.x));
+              this.y = Math.max(50, Math.min(130, this.y));
+            }
+            break;
+        }
       }
       
       // タイルとの衝突判定（移動を元に戻す）
@@ -1942,53 +2129,135 @@
       const dy = player.y - this.y;
       const dist = Math.hypot(dx, dy);
       
-      switch(this.type) {
-        case 'suzaku': // 朱雀：火の玉を3発
-          for (let i = 0; i < 3; i++) {
-            const angle = Math.atan2(dy, dx) + (i - 1) * 0.3;
-            this.bullets.push({
-              x: this.x, y: this.y,
-              vx: Math.cos(angle) * 80,
-              vy: Math.sin(angle) * 80,
-              life: 3.0,
-              color: '#ff4500'
-            });
-          }
-          break;
-        case 'genbu': // 玄武：氷の弾を5発（扇状）
-          for (let i = 0; i < 5; i++) {
-            const angle = Math.atan2(dy, dx) + (i - 2) * 0.4;
-            this.bullets.push({
-              x: this.x, y: this.y,
-              vx: Math.cos(angle) * 60,
-              vy: Math.sin(angle) * 60,
-              life: 4.0,
-              color: '#00bfff'
-            });
-          }
-          break;
-        case 'seiryu': // 青龍：雷の弾を8発（円形）
-          for (let i = 0; i < 8; i++) {
-            const angle = (i / 8) * Math.PI * 2;
-            this.bullets.push({
-              x: this.x, y: this.y,
-              vx: Math.cos(angle) * 70,
-              vy: Math.sin(angle) * 70,
-              life: 2.5,
-              color: '#ffff00'
-            });
-          }
-          break;
-        case 'kirin': // 麒麟：追尾弾
-          this.bullets.push({
-            x: this.x, y: this.y,
-            vx: (dx / dist) * 50,
-            vy: (dy / dist) * 50,
-            life: 5.0,
-            color: '#ffd700',
-            tracking: true
-          });
-          break;
+      if (this.phase === 1) {
+        // フェーズ1: 通常の攻撃
+        switch(this.type) {
+          case 'suzaku': // 朱雀：火の玉を3発
+            for (let i = 0; i < 3; i++) {
+              const angle = Math.atan2(dy, dx) + (i - 1) * 0.3;
+              this.bullets.push({
+                x: this.x, y: this.y,
+                vx: Math.cos(angle) * 80,
+                vy: Math.sin(angle) * 80,
+                life: 3.0,
+                color: '#ff4500'
+              });
+            }
+            break;
+          case 'genbu': // 玄武：氷の弾を5発（扇状）
+            for (let i = 0; i < 5; i++) {
+              const angle = Math.atan2(dy, dx) + (i - 2) * 0.4;
+              this.bullets.push({
+                x: this.x, y: this.y,
+                vx: Math.cos(angle) * 60,
+                vy: Math.sin(angle) * 60,
+                life: 4.0,
+                color: '#00bfff'
+              });
+            }
+            break;
+          case 'seiryu': // 青龍：雷の弾を8発（円形）
+            for (let i = 0; i < 8; i++) {
+              const angle = (i / 8) * Math.PI * 2;
+              this.bullets.push({
+                x: this.x, y: this.y,
+                vx: Math.cos(angle) * 70,
+                vy: Math.sin(angle) * 70,
+                life: 2.5,
+                color: '#ffff00'
+              });
+            }
+            break;
+          case 'kirin': // 麒麟：追尾弾
+            if (dist > 0 && !isNaN(dist)) {
+              this.bullets.push({
+                x: this.x, y: this.y,
+                vx: (dx / dist) * 50,
+                vy: (dy / dist) * 50,
+                life: 5.0,
+                color: '#ffd700',
+                tracking: true
+              });
+            } else {
+              // プレイヤーとの距離が計算できない場合は、デフォルト方向に発射
+              this.bullets.push({
+                x: this.x, y: this.y,
+                vx: 50,
+                vy: 0,
+                life: 5.0,
+                color: '#ffd700',
+                tracking: true
+              });
+            }
+            break;
+        }
+      } else {
+        // フェーズ2: より強力な攻撃
+        switch(this.type) {
+          case 'suzaku': // 朱雀：火の玉を5発（より広範囲）
+            for (let i = 0; i < 5; i++) {
+              const angle = Math.atan2(dy, dx) + (i - 2) * 0.4;
+              this.bullets.push({
+                x: this.x, y: this.y,
+                vx: Math.cos(angle) * 90,
+                vy: Math.sin(angle) * 90,
+                life: 3.5,
+                color: '#ff0000'
+              });
+            }
+            break;
+          case 'genbu': // 玄武：氷の弾を8発（8方向全方向）
+            for (let i = 0; i < 8; i++) {
+              const angle = (i / 8) * Math.PI * 2;
+              this.bullets.push({
+                x: this.x, y: this.y,
+                vx: Math.cos(angle) * 65,
+                vy: Math.sin(angle) * 65,
+                life: 4.5,
+                color: '#00dfff'
+              });
+            }
+            break;
+          case 'seiryu': // 青龍：円形8発 + 追尾弾1発
+            // 円形攻撃
+            for (let i = 0; i < 8; i++) {
+              const angle = (i / 8) * Math.PI * 2;
+              this.bullets.push({
+                x: this.x, y: this.y,
+                vx: Math.cos(angle) * 75,
+                vy: Math.sin(angle) * 75,
+                life: 3.0,
+                color: '#ffff00'
+              });
+            }
+            // 追尾弾
+            if (dist > 0) {
+              this.bullets.push({
+                x: this.x, y: this.y,
+                vx: (dx / dist) * 60,
+                vy: (dy / dist) * 60,
+                life: 4.0,
+                color: '#ffff88',
+                tracking: true
+              });
+            }
+            break;
+          case 'kirin': // 麒麟：連続追尾弾2発
+            if (dist > 0) {
+              for (let i = 0; i < 2; i++) {
+                const angle = Math.atan2(dy, dx) + (i - 0.5) * 0.2;
+                this.bullets.push({
+                  x: this.x, y: this.y,
+                  vx: Math.cos(angle) * 55,
+                  vy: Math.sin(angle) * 55,
+                  life: 5.5,
+                  color: '#ffed4e',
+                  tracking: true
+                });
+              }
+            }
+            break;
+        }
       }
       Sound.playSound('button');
     }
@@ -2179,17 +2448,17 @@
         chiefBoss: null
       };
       
-      // 四隅にボスを配置（一番端っこ）
-      if (currentMapX === -4 && currentMapY === -4) {
+      // 四隅にボスを配置（赤い宝と同じ位置）
+      if (currentMapX === -3 && currentMapY === -3) {
         // 北西：玄武
         entities.bosses = [new Boss(160, 80, 'genbu')];
-      } else if (currentMapX === 4 && currentMapY === -4) {
+      } else if (currentMapX === 3 && currentMapY === -3) {
         // 北東：青龍
         entities.bosses = [new Boss(160, 80, 'seiryu')];
-      } else if (currentMapX === -4 && currentMapY === 4) {
+      } else if (currentMapX === -3 && currentMapY === 3) {
         // 南西：麒麟
         entities.bosses = [new Boss(160, 80, 'kirin')];
-      } else if (currentMapX === 4 && currentMapY === 4) {
+      } else if (currentMapX === 3 && currentMapY === 3) {
         // 南東：朱雀
         entities.bosses = [new Boss(160, 80, 'suzaku')];
       }
@@ -2747,25 +3016,8 @@
             hitSomething = true;
             if (boss.hp <= 0) {
               boss.dead = true;
-              const items = {
-                'suzaku': '村長の杖',
-                'genbu': '村長のメガネ',
-                'seiryu': '村長の証明書',
-                'kirin': '村長のハンカチ'
-              };
-              const itemName = items[boss.type];
-              if (itemName && !state.bossItems.includes(itemName)) {
-                state.bossItems.push(itemName);
-                showHint(`🎁 アイテムを手に入れた：${itemName}`, 3.0);
-                Sound.playSound('level');
-                
-                // 4つ揃ったかチェック
-                if (state.bossItems.length === 4) {
-                  setTimeout(() => {
-                    showHint('📢 村長から話があるようだ\n至急村長のところに戻るように！', 5.0);
-                    Sound.playSound('level');
-                  }, 1000);
-                }
+              if (!state.defeatedBosses.includes(boss.type)) {
+                state.defeatedBosses.push(boss.type);
               }
               state.coins += 50;
               gainExp(10);
@@ -2775,7 +3027,7 @@
                 'seiryu': '青龍',
                 'kirin': '麒麟'
               };
-              showHint(`💀 ${bossNames[boss.type]}撃破！`, 3.0);
+              showHint(`💀 ${bossNames[boss.type]}撃破！\n宝箱を確認してみよう`, 3.0);
             }
           }
         }
@@ -4024,30 +4276,40 @@
               else if (currentMapX === -3 && currentMapY === 3) bossType = 'kirin';  // 南西（麒麟）
               else if (currentMapX === 3 && currentMapY === 3) bossType = 'suzaku'; // 南東（朱雀）
               
-              const itemName = bossType ? bossItems[bossType] : null;
+            const itemName = bossType ? bossItems[bossType] : null;
+            
+            // ボスを倒したかチェック
+            const bossDefeated = bossType && state.defeatedBosses.includes(bossType);
+            
+            if (itemName && bossDefeated && !state.bossItems.includes(itemName)) {
+              // ボスを倒した後に宝箱から村長の私物アイテムを入手
+              state.bossItems.push(itemName);
+              Sound.playSound('level');
+              showHint(`📦 アイテムを手に入れた：${itemName}`, 3.0);
               
-              if (itemName && !state.bossItems.includes(itemName)) {
-                // 村長の私物アイテムを入手
-                state.bossItems.push(itemName);
-                Sound.playSound('level');
-                showHint(`📦 アイテムを手に入れた：${itemName}`, 3.0);
-                
-                // 4つ揃ったかチェック
-                if (state.bossItems.length === 4) {
-                  setTimeout(() => {
-                    showHint('📢 村長から話があるようだ\n至急村長のところに戻るように！', 5.0);
-                    Sound.playSound('level');
-                  }, 1000);
-                }
-              } else if (itemName && state.bossItems.includes(itemName)) {
-                // 既に入手済み
-                Sound.playSound('chest'); 
-                showHint(`📦 村長の私物が入っていた...（既に入手済み）`, 3.0);
-              } else {
-                // ボスを倒していない場合
-                Sound.playSound('chest'); 
-                showHint(`📦 村長の私物が入っていた...`, 3.0);
+              // 4つ揃ったかチェック
+              if (state.bossItems.length === 4) {
+                setTimeout(() => {
+                  showHint('📢 村長から話があるようだ\n至急村長のところに戻るように！', 5.0);
+                  Sound.playSound('level');
+                }, 1000);
               }
+            } else if (itemName && state.bossItems.includes(itemName)) {
+              // 既に入手済み
+              Sound.playSound('chest'); 
+              showHint(`📦 村長の私物が入っていた...（既に入手済み）`, 3.0);
+            } else if (itemName && !bossDefeated) {
+              // ボスを倒していない場合
+              Sound.playSound('chest'); 
+              showHint(`📦 鍵がかかっていて開かない...\nボスを倒す必要がありそうだ`, 3.0);
+            } else {
+              // 通常の報酬（ボスフィールド以外の宝箱）
+              const reward = 10 + state.level * 2;
+              state.coins += reward; 
+              gainExp(3);
+              Sound.playSound('chest'); 
+              showHint(`📦 宝箱から+${reward}💰`);
+            }
             } else {
               // 通常の報酬
               const reward = 10 + state.level * 2;
@@ -4249,29 +4511,13 @@
           Sound.playSound('hit');
           if (boss.hp <= 0) {
             boss.dead = true;
-            // アイテムを獲得
-            const items = {
-              'suzaku': '村長の杖',
-              'genbu': '村長のメガネ',
-              'seiryu': '村長の証明書',
-              'kirin': '村長のハンカチ'
-            };
-            const itemName = items[boss.type];
-            if (itemName && !state.bossItems.includes(itemName)) {
-              state.bossItems.push(itemName);
-              showHint(`🎁 アイテムを手に入れた：${itemName}`, 3.0);
-              Sound.playSound('level');
-              
-              // 4つ揃ったかチェック
-              if (state.bossItems.length === 4) {
-                setTimeout(() => {
-                  showChiefEvent();
-                }, 1000);
-              }
+            // ボスを倒したらコインと経験値を獲得（アイテムは宝箱から取得）
+            if (!state.defeatedBosses.includes(boss.type)) {
+              state.defeatedBosses.push(boss.type);
             }
             state.coins += 50;
             gainExp(10);
-            showHint(`💀 ${boss.type === 'suzaku' ? '朱雀' : boss.type === 'genbu' ? '玄武' : boss.type === 'seiryu' ? '青龍' : '麒麟'}撃破！`, 3.0);
+            showHint(`💀 ${boss.type === 'suzaku' ? '朱雀' : boss.type === 'genbu' ? '玄武' : boss.type === 'seiryu' ? '青龍' : '麒麟'}撃破！\n宝箱を確認してみよう`, 3.0);
           }
         }
       }
@@ -4426,20 +4672,8 @@
           s.life = 0;
           if (boss.hp <= 0) {
             boss.dead = true;
-            const items = {
-              'suzaku': '村長の杖',
-              'genbu': '村長のメガネ',
-              'seiryu': '村長の証明書',
-              'kirin': '村長のハンカチ'
-            };
-            const itemName = items[boss.type];
-            if (itemName && !state.bossItems.includes(itemName)) {
-              state.bossItems.push(itemName);
-              showHint(`🎁 アイテムを手に入れた：${itemName}`, 3.0);
-              Sound.playSound('level');
-              if (state.bossItems.length === 4) {
-                setTimeout(() => showChiefEvent(), 1000);
-              }
+            if (!state.defeatedBosses.includes(boss.type)) {
+              state.defeatedBosses.push(boss.type);
             }
             state.coins += 50;
             gainExp(10);
@@ -4449,7 +4683,7 @@
               'seiryu': '青龍',
               'kirin': '麒麟'
             };
-            showHint(`💀 ${bossNames[boss.type]}撃破！`, 3.0);
+            showHint(`💀 ${bossNames[boss.type]}撃破！\n宝箱を確認してみよう`, 3.0);
           }
         }
       }
@@ -4496,20 +4730,8 @@
           sp.life = 0;
           if (boss.hp <= 0) {
             boss.dead = true;
-            const items = {
-              'suzaku': '村長の杖',
-              'genbu': '村長のメガネ',
-              'seiryu': '村長の証明書',
-              'kirin': '村長のハンカチ'
-            };
-            const itemName = items[boss.type];
-            if (itemName && !state.bossItems.includes(itemName)) {
-              state.bossItems.push(itemName);
-              showHint(`🎁 アイテムを手に入れた：${itemName}`, 3.0);
-              Sound.playSound('level');
-              if (state.bossItems.length === 4) {
-                setTimeout(() => showChiefEvent(), 1000);
-              }
+            if (!state.defeatedBosses.includes(boss.type)) {
+              state.defeatedBosses.push(boss.type);
             }
             state.coins += 50;
             gainExp(10);
@@ -4519,7 +4741,7 @@
               'seiryu': '青龍',
               'kirin': '麒麟'
             };
-            showHint(`💀 ${bossNames[boss.type]}撃破！`, 3.0);
+            showHint(`💀 ${bossNames[boss.type]}撃破！\n宝箱を確認してみよう`, 3.0);
           }
         }
       }
@@ -5089,6 +5311,11 @@
   btnEndingClose.addEventListener('click', () => {
     endingDialog.close();
     Sound.playSound('button');
+    // タイトルに戻る（ページをリロードしてBGMを最初から再生）
+    stopBGM();
+    setTimeout(() => {
+      location.reload();
+    }, 300);
   });
   
   // 初期化
