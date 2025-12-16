@@ -248,9 +248,9 @@
   .virtual { position:absolute; inset:0; pointer-events:none; }
   
   .stick { 
-    position:absolute; left: 20px; bottom: 40px; 
+    position:absolute; left: 60px; bottom: 80px; 
     width: 176px; height: 176px; pointer-events:auto; 
-    transform: scale(1.2);
+    transform: scale(1.5);
   }
   .stick .base { 
     position:absolute; inset: 0; border-radius:50%; 
@@ -269,19 +269,20 @@
 
   .btn-top-row {
     position: absolute;
-    right: 10px;
-    bottom: calc(30px + var(--btn-size) + 12px);
+    right: 70px;
+    bottom: calc(90px + var(--btn-size) + 12px);
     display: flex;
     flex-direction: row;
     gap: 12px;
     align-items: center;
     pointer-events: auto;
     z-index: 10;
+    transform: scale(1.7);
   }
   
   .btn-bottom-row {
     position: absolute;
-    right: 10px;
+    right: 70px;
     bottom: 40px;
     display: flex;
     flex-direction: row;
@@ -289,6 +290,7 @@
     align-items: center;
     pointer-events: auto;
     z-index: 10;
+    transform: scale(1.7);
   }
   
   .btn-item-select {
@@ -549,32 +551,34 @@
 
     .stick {
       position: absolute;
-      left: calc(18px * var(--landscape-scale));
-      bottom: calc(38px * var(--landscape-scale));
+      left: calc(58px * var(--landscape-scale)); /* 右上に40px移動（18px + 40px） */
+      bottom: calc(78px * var(--landscape-scale)); /* 上に40px移動（38px + 40px） */
       width: calc(121px * var(--landscape-scale));
       height: calc(121px * var(--landscape-scale));
       margin: 0;
       pointer-events: auto;
       z-index: 10;
-      transform: scale(1.2);
+      transform: scale(1.5);
     }
 
     .btn-top-row {
       position: absolute;
-      right: calc(8px * var(--landscape-scale));
-      bottom: calc((28px + 64px + 16px) * var(--landscape-scale));
+      right: calc(68px * var(--landscape-scale)); /* 右上に60px移動（8px + 60px） */
+      bottom: calc((88px + 64px + 16px) * var(--landscape-scale));
       gap: calc(12px * var(--landscape-scale));
       pointer-events: auto;
       z-index: 10;
+      transform: scale(1.7);
     }
     
     .btn-bottom-row {
       position: absolute;
-      right: calc(8px * var(--landscape-scale));
+      right: calc(68px * var(--landscape-scale)); /* 右上に60px移動（8px + 60px） */
       bottom: calc(38px * var(--landscape-scale));
       gap: calc(12px * var(--landscape-scale));
       pointer-events: auto;
       z-index: 10;
+      transform: scale(1.7);
     }
 
     .btn-top-row .btn,
@@ -603,17 +607,107 @@
       font-size: calc(14px * var(--landscape-scale));
       padding: calc(8px * var(--landscape-scale)) calc(12px * var(--landscape-scale));
     }
+
+    /* iOS向け最適化（横画面時） */
+    @supports (-webkit-touch-callout: none) {
+      .stick {
+        left: calc(98px * var(--landscape-scale)); /* 右上に40px移動（58px + 40px） */
+        bottom: calc(118px * var(--landscape-scale)); /* 上に40px移動（78px + 40px） */
+        transform: scale(1.5); /* 1.5倍に */
+        touch-action: none;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+
+      .btn-top-row,
+      .btn-bottom-row {
+        right: calc(108px * var(--landscape-scale)); /* 右上に60px移動（48px + 60px） */
+        transform: scale(1.7); /* 1.7倍に */
+      }
+
+      .btn-top-row {
+        bottom: calc((128px + 64px + 16px) * var(--landscape-scale)); /* 上に60px移動 */
+      }
+
+      .btn-bottom-row {
+        bottom: calc(78px * var(--landscape-scale)); /* 上に40px移動 */
+      }
+
+      .btn-top-row .btn,
+      .btn-bottom-row .btn,
+      .btn-item-select {
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      /* 右下のボタン専用の強化スタイル（iOS横画面） */
+      .btn-bottom-row .btn:active {
+        transform: scale(0.75) !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.6), inset 0 3px 6px rgba(0,0,0,0.4);
+      }
+    }
   }
 
-  /* ボタンの打感アニメーション */
+  /* ボタンの打感アニメーション（強化版） */
   @keyframes buttonPress {
     0% { transform: scale(1); }
-    50% { transform: scale(0.85); }
-    100% { transform: scale(0.92); }
+    30% { transform: scale(0.75); }
+    70% { transform: scale(0.88); }
+    100% { transform: scale(0.95); }
   }
 
   .btn.pressed {
-    animation: buttonPress 0.15s ease-out;
+    animation: buttonPress 0.08s ease-out;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5), inset 0 2px 4px rgba(0,0,0,0.3);
+  }
+
+  /* 右下のボタン専用の強化スタイル */
+  .btn-bottom-row .btn {
+    transition: transform 0.05s ease-out, box-shadow 0.05s ease-out;
+  }
+
+  .btn-bottom-row .btn:active {
+    transform: scale(0.80) !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.6), inset 0 3px 6px rgba(0,0,0,0.4);
+  }
+
+  /* iOS向け最適化 */
+  @supports (-webkit-touch-callout: none) {
+    .stick {
+      left: 100px; /* 右上に40px移動（60px + 40px） */
+      bottom: 120px; /* 上に40px移動（80px + 40px） */
+      transform: scale(1.5); /* 1.5倍に */
+      touch-action: none; /* iOSのタッチ操作を最適化 */
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    .btn-top-row,
+    .btn-bottom-row {
+      right: 110px; /* 右上に60px移動（50px + 60px） */
+      transform: scale(1.7); /* 1.7倍に */
+    }
+
+    .btn-top-row {
+      bottom: calc(130px + var(--btn-size) + 12px); /* 上に60px移動 */
+    }
+
+    .btn-bottom-row {
+      bottom: 80px; /* 上に40px移動 */
+    }
+
+    .btn-top-row .btn,
+    .btn-bottom-row .btn,
+    .btn-item-select {
+      touch-action: manipulation; /* iOSのタッチ操作を最適化 */
+      -webkit-tap-highlight-color: transparent; /* タップ時のハイライトを無効化 */
+    }
+
+    /* 右下のボタン専用の強化スタイル（iOS） */
+    .btn-bottom-row .btn:active {
+      transform: scale(0.75) !important;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.6), inset 0 3px 6px rgba(0,0,0,0.4);
+    }
   }
 </style>
 </head>
@@ -1464,17 +1558,29 @@
 
   const setKnob = (dx,dy) => stickKnob.style.transform = `translate(${dx}px, ${dy}px)`;
 
-  stick.addEventListener('pointerdown', (e) => {
+  // iOS向けのタッチイベント最適化
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  
+  const handleStickStart = (e) => {
     e.preventDefault();
-    stickId = e.pointerId;
-    stickCenter.x = e.clientX;
-    stickCenter.y = e.clientY;
-  });
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    stickId = e.pointerId || (e.touches ? e.touches[0].identifier : 0);
+    stickCenter.x = clientX;
+    stickCenter.y = clientY;
+  };
 
-  window.addEventListener('pointermove', (e) => {
-    if (e.pointerId === stickId) {
-      const dx = e.clientX - stickCenter.x;
-      const dy = e.clientY - stickCenter.y;
+  const handleStickMove = (e) => {
+    if (stickId === null) return;
+    const isTouch = e.touches && e.touches.length > 0;
+    const currentId = isTouch ? e.touches[0].identifier : e.pointerId;
+    
+    if (currentId === stickId || (stickId !== null && !isTouch)) {
+      const clientX = isTouch ? e.touches[0].clientX : e.clientX;
+      const clientY = isTouch ? e.touches[0].clientY : e.clientY;
+      const dx = clientX - stickCenter.x;
+      const dy = clientY - stickCenter.y;
       const len = Math.hypot(dx,dy) || 1;
       const cl = Math.min(len, R);
       const nx = dx/len, ny = dy/len;
@@ -1484,16 +1590,33 @@
       Input.ay = (cl/R)*ny;
       e.preventDefault();
     }
-  });
+  };
 
-  window.addEventListener('pointerup', (e) => {
-    if (e.pointerId === stickId) {
+  const handleStickEnd = (e) => {
+    const isTouch = e.changedTouches && e.changedTouches.length > 0;
+    const currentId = isTouch ? e.changedTouches[0].identifier : e.pointerId;
+    
+    if (currentId === stickId || (stickId !== null && !isTouch)) {
       stickId = null;
       setKnob(0, 0);
       Input.ax = 0;
       Input.ay = 0;
+      e.preventDefault();
     }
-  });
+  };
+
+  // イベントリスナーの登録（iOS向けに最適化）
+  if (isIOS) {
+    stick.addEventListener('touchstart', handleStickStart, { passive: false });
+    stick.addEventListener('touchmove', handleStickMove, { passive: false });
+    stick.addEventListener('touchend', handleStickEnd, { passive: false });
+    stick.addEventListener('touchcancel', handleStickEnd, { passive: false });
+  }
+  
+  stick.addEventListener('pointerdown', handleStickStart);
+  window.addEventListener('pointermove', handleStickMove);
+  window.addEventListener('pointerup', handleStickEnd);
+  window.addEventListener('pointercancel', handleStickEnd);
 
   // ボタンの打感（触覚フィードバック）
   const vibrate = (pattern = [10]) => {
@@ -1516,29 +1639,47 @@
     Input[key] = true;
     Sound.playSound('button');
     
-    // 打感：触覚フィードバック
-    vibrate([5, 5, 10]);
+    // 打感：触覚フィードバック（強化版）
+    const isBottomRow = btn.closest('.btn-bottom-row');
+    if (isBottomRow) {
+      // 右下のボタンはより強い振動
+      vibrate([10, 5, 15, 5, 10]);
+    } else {
+      vibrate([5, 5, 10]);
+    }
     
-    // 打感：視覚的フィードバック
+    // 打感：視覚的フィードバック（高速化）
     btn.classList.add('pressed');
     setTimeout(() => {
       btn.classList.remove('pressed');
-    }, 150);
+    }, 80); // 150ms → 80ms に短縮
   };
   const releaseBtn = (key) => (e) => {
     e.preventDefault();
     Input[key] = false;
   };
 
-  btnA.addEventListener('pointerdown', pressBtn('a', btnA));
-  btnA.addEventListener('pointerup', releaseBtn('a'));
-  btnA.addEventListener('pointercancel', releaseBtn('a'));
-  btnB.addEventListener('pointerdown', pressBtn('b', btnB));
-  btnB.addEventListener('pointerup', releaseBtn('b'));
-  btnB.addEventListener('pointercancel', releaseBtn('b'));
-  btnX.addEventListener('pointerdown', pressBtn('x', btnX));
-  btnX.addEventListener('pointerup', releaseBtn('x'));
-  btnX.addEventListener('pointercancel', releaseBtn('x'));
+  // ボタンイベント登録（高速化のためタッチイベントも追加）
+  const addButtonEvents = (btn, key) => {
+    const press = pressBtn(key, btn);
+    const release = releaseBtn(key);
+    
+    // ポインターイベント
+    btn.addEventListener('pointerdown', press, { passive: false });
+    btn.addEventListener('pointerup', release, { passive: false });
+    btn.addEventListener('pointercancel', release, { passive: false });
+    
+    // タッチイベント（iOS向け高速化）
+    if (isIOS) {
+      btn.addEventListener('touchstart', press, { passive: false });
+      btn.addEventListener('touchend', release, { passive: false });
+      btn.addEventListener('touchcancel', release, { passive: false });
+    }
+  };
+
+  addButtonEvents(btnA, 'a');
+  addButtonEvents(btnB, 'b');
+  addButtonEvents(btnX, 'x');
 
   // 武器の種類
   const WEAPONS = {
