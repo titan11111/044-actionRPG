@@ -248,8 +248,9 @@
   .virtual { position:absolute; inset:0; pointer-events:none; }
   
   .stick { 
-    position:absolute; left: 10px; bottom: 10px; 
+    position:absolute; left: 20px; bottom: 40px; 
     width: 176px; height: 176px; pointer-events:auto; 
+    transform: scale(1.2);
   }
   .stick .base { 
     position:absolute; inset: 0; border-radius:50%; 
@@ -269,7 +270,7 @@
   .btn-top-row {
     position: absolute;
     right: 10px;
-    bottom: calc(10px + var(--btn-size) + 12px);
+    bottom: calc(30px + var(--btn-size) + 12px);
     display: flex;
     flex-direction: row;
     gap: 12px;
@@ -281,7 +282,7 @@
   .btn-bottom-row {
     position: absolute;
     right: 10px;
-    bottom: 10px;
+    bottom: 40px;
     display: flex;
     flex-direction: row;
     gap: 12px;
@@ -407,8 +408,8 @@
     position: absolute;
     top: 8px;
     left: 8px;
-    width: 165px;
-    height: 165px;
+    width: 198px;
+    height: 198px;
     background: rgba(0, 0, 0, 0.6);
     border: 2px solid var(--outline);
     border-radius: 8px;
@@ -467,8 +468,8 @@
       position: absolute;
       top: calc(8px * var(--landscape-scale));
       left: calc(8px * var(--landscape-scale));
-      width: calc(99px * var(--landscape-scale));
-      height: calc(99px * var(--landscape-scale));
+      width: calc(118.8px * var(--landscape-scale));
+      height: calc(118.8px * var(--landscape-scale));
       margin: 0;
       pointer-events: auto;
       z-index: 10;
@@ -548,19 +549,20 @@
 
     .stick {
       position: absolute;
-      left: calc(8px * var(--landscape-scale));
-      bottom: calc(8px * var(--landscape-scale));
+      left: calc(18px * var(--landscape-scale));
+      bottom: calc(38px * var(--landscape-scale));
       width: calc(121px * var(--landscape-scale));
       height: calc(121px * var(--landscape-scale));
       margin: 0;
       pointer-events: auto;
       z-index: 10;
+      transform: scale(1.2);
     }
 
     .btn-top-row {
       position: absolute;
       right: calc(8px * var(--landscape-scale));
-      bottom: calc((8px + 64px + 16px) * var(--landscape-scale));
+      bottom: calc((28px + 64px + 16px) * var(--landscape-scale));
       gap: calc(12px * var(--landscape-scale));
       pointer-events: auto;
       z-index: 10;
@@ -569,7 +571,7 @@
     .btn-bottom-row {
       position: absolute;
       right: calc(8px * var(--landscape-scale));
-      bottom: calc(8px * var(--landscape-scale));
+      bottom: calc(38px * var(--landscape-scale));
       gap: calc(12px * var(--landscape-scale));
       pointer-events: auto;
       z-index: 10;
