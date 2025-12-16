@@ -611,9 +611,9 @@
     /* iOS向け最適化（横画面時） */
     @supports (-webkit-touch-callout: none) {
       .stick {
-        left: calc(98px * var(--landscape-scale)); /* 右上に40px移動（58px + 40px） */
+        left: calc(108px * var(--landscape-scale)); /* 左に10px移動（98px + 10px） */
         bottom: calc(118px * var(--landscape-scale)); /* 上に40px移動（78px + 40px） */
-        transform: scale(1.5); /* 1.5倍に */
+        transform: scale(1.65); /* 1.1倍に拡大（1.5 * 1.1） */
         touch-action: none;
         -webkit-user-select: none;
         user-select: none;
@@ -621,16 +621,16 @@
 
       .btn-top-row,
       .btn-bottom-row {
-        right: calc(108px * var(--landscape-scale)); /* 右上に60px移動（48px + 60px） */
-        transform: scale(1.7); /* 1.7倍に */
+        right: calc(98px * var(--landscape-scale)); /* 右下に10px移動（108px - 10px） */
+        transform: scale(1.87); /* 1.1倍に拡大（1.7 * 1.1） */
       }
 
       .btn-top-row {
-        bottom: calc((128px + 64px + 16px) * var(--landscape-scale)); /* 上に60px移動 */
+        bottom: calc((116px + 64px + 16px) * var(--landscape-scale)); /* 下に12px移動（128px - 12px） */
       }
 
       .btn-bottom-row {
-        bottom: calc(78px * var(--landscape-scale)); /* 上に40px移動 */
+        bottom: calc(68px * var(--landscape-scale)); /* 右下に10px移動（78px - 10px） */
       }
 
       .btn-top-row .btn,
@@ -674,9 +674,9 @@
   /* iOS向け最適化 */
   @supports (-webkit-touch-callout: none) {
     .stick {
-      left: 100px; /* 右上に40px移動（60px + 40px） */
+      left: 110px; /* 左に10px移動（100px + 10px） */
       bottom: 120px; /* 上に40px移動（80px + 40px） */
-      transform: scale(1.5); /* 1.5倍に */
+      transform: scale(1.65); /* 1.1倍に拡大（1.5 * 1.1） */
       touch-action: none; /* iOSのタッチ操作を最適化 */
       -webkit-user-select: none;
       user-select: none;
@@ -684,16 +684,16 @@
 
     .btn-top-row,
     .btn-bottom-row {
-      right: 110px; /* 右上に60px移動（50px + 60px） */
-      transform: scale(1.7); /* 1.7倍に */
+      right: 100px; /* 右下に10px移動（110px - 10px） */
+      transform: scale(1.87); /* 1.1倍に拡大（1.7 * 1.1） */
     }
 
     .btn-top-row {
-      bottom: calc(130px + var(--btn-size) + 12px); /* 上に60px移動 */
+      bottom: calc(118px + var(--btn-size) + 12px); /* 下に12px移動（130px - 12px） */
     }
 
     .btn-bottom-row {
-      bottom: 80px; /* 上に40px移動 */
+      bottom: 70px; /* 右下に10px移動（80px - 10px） */
     }
 
     .btn-top-row .btn,
