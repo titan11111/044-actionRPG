@@ -213,6 +213,10 @@
     border: 2px solid var(--outline);
     border-radius: 16px;
     box-shadow: 0 8px 16px rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
   }
   .rotate-hint-icon {
     font-size: 64px;
@@ -221,6 +225,24 @@
   @keyframes rotate {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(90deg); }
+  }
+  .btn-fullscreen {
+    pointer-events: auto;
+    background: var(--accent);
+    border: 2px solid var(--outline);
+    color: var(--text);
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: calc(18px * var(--font-scale));
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    margin-top: 8px;
+  }
+  .btn-fullscreen:active {
+    transform: scale(0.96);
+    background: var(--panel-strong);
   }
 
   .virtual { position:absolute; inset:0; pointer-events:none; }
@@ -721,7 +743,8 @@
         <div class="rotate-hint-icon">📱</div>
         <div class="rotate-hint-content">
           <p style="margin: 0 0 12px 0;">画面を横にしてプレイしてください</p>
-          <p style="margin: 0; font-size: 0.7em; color: var(--muted);">横にしたら操作できます</p>
+          <p style="margin: 0; font-size: 0.7em; color: var(--muted);">横にしたら自動的に全画面展開されます</p>
+          <button class="btn-fullscreen" id="btnFullscreen" style="display: none;">全画面で開始</button>
         </div>
       </div>
     </div>
@@ -5096,6 +5119,53 @@
   
   // 画面回転案内の表示制御
   const rotateHint = document.getElementById('rotateHint');
+  const btnFullscreen = document.getElementById('btnFullscreen');
+  
+  // 全画面展開がサポートされているかチェック
+  function isFullscreenSupported() {
+    return !!(document.fullscreenEnabled || 
+              document.webkitFullscreenEnabled || 
+              document.mozFullScreenEnabled || 
+              document.msFullscreenEnabled);
+  }
+  
+  // 全画面展開の関数（クロスブラウザ対応）
+  function requestFullscreen() {
+    const element = document.documentElement;
+    if (element.requestFullscreen) {
+      return element.requestFullscreen();
+    } else if (element.webkitRequestFullscreen) {
+      return element.webkitRequestFullscreen();
+    } else if (element.webkitRequestFullScreen) {
+      return element.webkitRequestFullScreen();
+    } else if (element.mozRequestFullScreen) {
+      return element.mozRequestFullScreen();
+    } else if (element.msRequestFullscreen) {
+      return element.msRequestFullscreen();
+    }
+    return Promise.reject(new Error('Fullscreen API not supported'));
+  }
+  
+  // 横画面かどうかを判定（複数の方法で確認）
+  function isLandscapeMode() {
+    // 方法1: CSS media query
+    const mediaQuery = window.matchMedia('(orientation: landscape)');
+    if (mediaQuery.matches) return true;
+    
+    // 方法2: 画面サイズの比較（より確実）
+    const width = window.innerWidth || document.documentElement.clientWidth;
+    const height = window.innerHeight || document.documentElement.clientHeight;
+    if (width > height) return true;
+    
+    // 方法3: screen.orientation API（対応している場合）
+    if (screen.orientation) {
+      const angle = screen.orientation.angle;
+      if (angle === 90 || angle === -90 || angle === 270) return true;
+    }
+    
+    return false;
+  }
+  
   function checkOrientation() {
     if (!isMobile) {
       state.canPlay = true;
@@ -5103,14 +5173,49 @@
       return;
     }
     
-    const isLandscape = window.matchMedia('(orientation: landscape)').matches;
+    const isLandscape = isLandscapeMode();
     if (isLandscape) {
       state.canPlay = true;
       if (rotateHint) rotateHint.classList.remove('show');
+      
+      // 全画面展開ボタンを非表示
+      if (btnFullscreen) btnFullscreen.style.display = 'none';
+      
+      // 横画面になったら自動的に全画面展開を試みる
+      // ただし、既に全画面の場合はスキップ
+      if (!document.fullscreenElement && 
+          !document.webkitFullscreenElement && 
+          !document.mozFullScreenElement && 
+          !document.msFullscreenElement) {
+        requestFullscreen().catch(err => {
+          // 全画面展開が失敗してもゲームは開始する
+          console.log('全画面展開に失敗しました:', err);
+        });
+      }
     } else {
       state.canPlay = false;
       if (rotateHint) rotateHint.classList.add('show');
+      
+      // 全画面展開がサポートされている場合、ボタンを表示
+      if (btnFullscreen && isFullscreenSupported()) {
+        btnFullscreen.style.display = 'block';
+      } else if (btnFullscreen) {
+        btnFullscreen.style.display = 'none';
+      }
     }
+  }
+  
+  // 全画面展開ボタンのイベントリスナー
+  if (btnFullscreen) {
+    btnFullscreen.addEventListener('click', () => {
+      requestFullscreen().then(() => {
+        // 全画面展開成功後、画面の向きを再チェック
+        setTimeout(checkOrientation, 200);
+      }).catch(err => {
+        console.log('全画面展開に失敗しました:', err);
+        alert('全画面展開に失敗しました。画面を横にしてから再度お試しください。');
+      });
+    });
   }
   
   // 初期チェック
@@ -5118,11 +5223,19 @@
   
   // 画面向き変更を監視
   window.addEventListener('orientationchange', () => {
-    setTimeout(checkOrientation, 100); // 向き変更の反映を待つ
+    setTimeout(checkOrientation, 200); // 向き変更の反映を待つ（少し長めに）
   });
   
   // リサイズ時もチェック（念のため）
-  window.addEventListener('resize', checkOrientation);
+  window.addEventListener('resize', () => {
+    setTimeout(checkOrientation, 100);
+  });
+  
+  // 全画面状態の変更を監視（全画面が解除された場合の処理）
+  document.addEventListener('fullscreenchange', checkOrientation);
+  document.addEventListener('webkitfullscreenchange', checkOrientation);
+  document.addEventListener('mozfullscreenchange', checkOrientation);
+  document.addEventListener('MSFullscreenChange', checkOrientation);
 
   function loop(){
     const t = performance.now(); 
