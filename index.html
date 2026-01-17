@@ -1974,6 +1974,11 @@
       state.expToNext = Math.floor(state.expToNext * 1.2);
       state.maxHp++;
       state.hp = state.maxHp;
+      // player.maxHpも同期させる
+      if (player) {
+        player.maxHp = state.maxHp;
+        player.hp = state.hp;
+      }
       Sound.playSound('level');
       showLevelUp();
       showHint(`レベル ${state.level}! HP+1`);
@@ -3282,7 +3287,9 @@
 
   function hitPlayer(dmg) {
     if (player.inv>0) return;
-    player.hp = Math.max(0, player.hp - dmg);
+    // state.maxHpとplayer.maxHpを同期
+    player.maxHp = state.maxHp;
+    player.hp = Math.max(0, Math.min(player.hp - dmg, player.maxHp));
     state.hp = player.hp;
     player.inv = 1.2;
     Sound.playSound('hit');
@@ -3298,8 +3305,10 @@
     currentMapX = 0;
     currentMapY = 0;
     player.x=160; player.y=96;
-    player.hp=player.maxHp;
-    state.hp=player.hp;
+    // state.maxHpとplayer.maxHpを同期してからリスポーン
+    player.maxHp = state.maxHp;
+    player.hp = state.maxHp;
+    state.hp = player.hp;
     arrows.length = 0; // 矢をクリア
     shurikens.length = 0; // 手裏剣をクリア
     spears.length = 0; // 長槍をクリア
